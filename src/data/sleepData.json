@@ -1,0 +1,74 @@
+{
+  "patient": {
+    "id": "PT-20240204",
+    "name": "Patient/User ID",
+    "date": "February 4, 2025"
+  },
+  "metrics": {
+    "totalSleepTime": { "value": 6, "unit": "Hrs", "change": 30, "trend": "down" },
+    "sleepEfficiency": { "value": 45, "unit": "Mins", "change": 30, "trend": "down" },
+    "wakeAfterSleepOnset": { "value": 75, "unit": "%", "change": 15, "trend": "down" },
+    "sleepLatency": { "value": 20, "unit": "Mins", "change": 15, "trend": "down" }
+  },
+  "sleepStages": {
+    "deepSleep": 25,
+    "lightSleep": 50,
+    "remSleep": 25,
+    "totalMinutes": 480
+  },
+  "sleepDurationOverTime": [
+    { "day": "1", "hours": 5, "quality": "avg"  },
+    { "day": "2", "hours": 8, "quality": "good" },
+    { "day": "3", "hours": 6, "quality": "avg"  },
+    { "day": "4", "hours": 3, "quality": "poor" },
+    { "day": "5", "hours": 5, "quality": "avg"  },
+    { "day": "6", "hours": 8, "quality": "good" },
+    { "day": "7", "hours": 5, "quality": "avg"  }
+  ],
+  "bodyMovement": [
+    { "time": "10Pm", "value": 15 },
+    { "time": "11Pm", "value": 22 },
+    { "time": "12Am", "value": 58 },
+    { "time": "1Am",  "value": 72 },
+    { "time": "2Am",  "value": 92 },
+    { "time": "3Am",  "value": 100 },
+    { "time": "4Am",  "value": 85 },
+    { "time": "4:30", "value": 60 },
+    { "time": "5Am",  "value": 36 },
+    { "time": "5:30", "value": 20 },
+    { "time": "6Am",  "value": 12 }
+  ],
+  "wakeEpisodes": [
+    { "label": "6Am",  "duration": 46, "wakeTime": "10:30Pm", "wakeDur": "10min" },
+    { "label": "5Am",  "duration": 0,  "wakeTime": null,       "wakeDur": null    },
+    { "label": "4Am",  "duration": 0,  "wakeTime": null,       "wakeDur": null    },
+    { "label": "3Am",  "duration": 46, "wakeTime": "12:50Am",  "wakeDur": "20min" },
+    { "label": "2am",  "duration": 0,  "wakeTime": null,       "wakeDur": null    },
+    { "label": "1Am",  "duration": 32, "wakeTime": "02:50Am",  "wakeDur": "30min" },
+    { "label": "12Am", "duration": 0,  "wakeTime": null,       "wakeDur": null    },
+    { "label": "11pm", "duration": 20, "wakeTime": "05:20Am",  "wakeDur": "20min" },
+    { "label": "10pm", "duration": 0,  "wakeTime": null,       "wakeDur": null    }
+  ],
+  "insights": {
+    "sleepQualityScore": 60,
+    "recentAlerts": "Low Sleep Efficiency Detected on February 10, 2025",
+    "diagnosis": "Insomnia: trouble falling or staying asleep, the most common sleep disorder"
+  },
+  "recommendations": [
+    "Limit Evening Screen Time",
+    "Create a Restful Environment"
+  ],
+  "sleepHygieneTips": [
+    "Be Mindful of Naps",
+    "Avoid caffeine before bed"
+  ],
+  "navigation": [
+    { "label": "Home",        "active": false },
+    { "label": "Falls",       "active": false },
+    { "label": "ADLs",        "active": false },
+    { "label": "Sleep Diary", "active": true  },
+    { "label": "Gait",        "active": false },
+    { "label": "Seniors",     "active": false },
+    { "label": "Caregivers",  "active": false }
+  ]
+}
