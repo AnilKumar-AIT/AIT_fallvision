@@ -5,45 +5,39 @@ import efficiencyIcon from "../assets/sleep_efficiency.svg";
 import latencyIcon    from "../assets/sleep_latency.svg";
 import wasoIcon       from "../assets/wake_after_sleep.svg";
 import useWindowSize  from "../hooks/useWindowSize";
+import sleepData      from "../data/sleepData.json";
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, BarChart, Bar,
 } from "recharts";
 
-/* ═══════════════════════════════ DATA ═══════════════════════════════════ */
-const sleepDurationData = [
-  { day:"1", hours:5, q:"avg"  },
-  { day:"2", hours:8, q:"good" },
-  { day:"3", hours:6, q:"avg"  },
-  { day:"4", hours:3, q:"poor" },
-  { day:"5", hours:5, q:"avg"  },
-  { day:"6", hours:8, q:"good" },
-  { day:"7", hours:5, q:"avg"  },
-];
+/* ═══════════════════════ DATA (from sleepData.json) ═══════════════════════ */
+const sleepDurationData = sleepData.sleepDurationOverTime.map(d => ({
+  day: d.day, hours: d.hours, q: d.quality,
+}));
 
-const movementRaw = [
-  { t:"10Pm",h:15 },{ t:"11Pm",h:22 },{ t:"12Am",h:58 },
-  { t:"1Am", h:72 },{ t:"2Am", h:92 },{ t:"3Am", h:100},
-  { t:"4Am", h:85 },{ t:"4:30",h:60 },{ t:"5Am", h:36 },
-  { t:"5:30",h:20 },{ t:"6Am", h:12 },
-];
+const movementRaw = sleepData.bodyMovement.map(d => ({
+  t: d.time, h: d.value,
+}));
 
-const wakeEpisodes = [
-  { label:"6Am",  dur:46, wakeTime:"10:30Pm", wakeDur:"10min" },
-  { label:"5Am",  dur:0,  wakeTime:null,       wakeDur:null    },
-  { label:"4Am",  dur:0,  wakeTime:null,       wakeDur:null    },
-  { label:"3Am",  dur:46, wakeTime:"12:50Am",  wakeDur:"20min" },
-  { label:"2am",  dur:0,  wakeTime:null,       wakeDur:null    },
-  { label:"1Am",  dur:32, wakeTime:"02:50Am",  wakeDur:"30min" },
-  { label:"12Am", dur:0,  wakeTime:null,       wakeDur:null    },
-  { label:"11pm", dur:20, wakeTime:"05:20Am",  wakeDur:"20min" },
-  { label:"10pm", dur:0,  wakeTime:null,       wakeDur:null    },
-];
+const wakeEpisodes = sleepData.wakeEpisodes.map(d => ({
+  label: d.label, dur: d.duration, wakeTime: d.wakeTime, wakeDur: d.wakeDur,
+}));
 
 const stagesData = [
-  { name:"REM Sleep",   value:25, color:"#22a8d4" },
-  { name:"Light Sleep", value:50, color:"#1578be" },
-  { name:"Deep Sleep",  value:25, color:"#0a2240" },
+  { name:"REM Sleep",   value:sleepData.sleepStages.remSleep,   color:"#22a8d4" },
+  { name:"Light Sleep", value:sleepData.sleepStages.lightSleep, color:"#1578be" },
+  { name:"Deep Sleep",  value:sleepData.sleepStages.deepSleep,  color:"#0a2240" },
+];
+
+const totalSleepHours = Math.floor(sleepData.sleepStages.totalMinutes / 60);
+const totalSleepMins  = sleepData.sleepStages.totalMinutes;
+
+const metricCards = [
+  { label:"Total Sleep Time",       val:String(sleepData.metrics.totalSleepTime.value),       unit:sleepData.metrics.totalSleepTime.unit,       pct:`${sleepData.metrics.totalSleepTime.change}%`,       icon:totalSleepIcon },
+  { label:"Sleep Efficiency",       val:String(sleepData.metrics.sleepEfficiency.value),      unit:sleepData.metrics.sleepEfficiency.unit,      pct:`${sleepData.metrics.sleepEfficiency.change}%`,      icon:efficiencyIcon },
+  { label:"Wake After Sleep Onset", val:String(sleepData.metrics.wakeAfterSleepOnset.value),  unit:sleepData.metrics.wakeAfterSleepOnset.unit,  pct:`${sleepData.metrics.wakeAfterSleepOnset.change}%`,  icon:wasoIcon, big:true },
+  { label:"Sleep Latency",          val:String(sleepData.metrics.sleepLatency.value),         unit:sleepData.metrics.sleepLatency.unit,         pct:`${sleepData.metrics.sleepLatency.change}%`,         icon:latencyIcon },
 ];
 
 /* ═══════════════════════ HELPERS ════════════════════════════════════════ */
@@ -99,13 +93,12 @@ const Pill = ({ children }) => (
 
 /* ═══════════════════════ PAGE ════════════════════════════════════════════ */
 export default function SleepDiaryPage() {
-  const [date] = useState("February 4, 2025");
+  const [date] = useState(sleepData.patient.date);
   const { isMobile, isTablet, isDesktop } = useWindowSize();
 
   // Responsive values
   const padding       = isMobile ? "10px 10px" : "13px 15px";
   const gap           = isMobile ? 8 : 9;
-  const titleSize     = isMobile ? 14 : 19;
   const twoCol        = isDesktop;  // two-column main grid only on desktop
   const metricBigNum  = isMobile ? 38 : 62;
   const metricBigNumB = isMobile ? 32 : 54;
@@ -126,37 +119,32 @@ export default function SleepDiaryPage() {
       {/* ── Header ── */}
       <div style={{
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: isMobile ? "flex-start" : "center",
+        justifyContent: "flex-end",
+        alignItems: "center",
         flexWrap: "wrap",
         gap: 8,
       }}>
-        <h1 style={{ margin:0, fontSize:titleSize, fontWeight:700, color:W, letterSpacing:0.2 }}>
-          Daily Sleep-Wake Disorders Dashboard
-        </h1>
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-          <div style={{
-            background:"rgba(6,12,22,0.8)", border:"2px solid #ffffff",
-            borderRadius:10, padding:"5px 12px",
-            display:"flex", alignItems:"center", gap:6,
-            fontSize:12, color:W, cursor:"pointer", fontWeight:500,
-          }}>
-            {date}
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-              <path d="M2 4l4 4 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div style={{
-            background:"#177080", borderRadius:10, padding:"5px 12px",
-            display:"flex", alignItems:"center", gap:6,
-            fontSize:12, color:W, cursor:"pointer", fontWeight:500,
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-            </svg>
-            Patient/User ID
-          </div>
+        <div style={{
+          background:"rgba(6,12,22,0.8)", border:"2px solid #ffffff",
+          borderRadius:10, padding:"5px 12px",
+          display:"flex", alignItems:"center", gap:6,
+          fontSize:12, color:W, cursor:"pointer", fontWeight:500,
+        }}>
+          {date}
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M2 4l4 4 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <div style={{
+          background:"#177080", borderRadius:10, padding:"5px 12px",
+          display:"flex", alignItems:"center", gap:6,
+          fontSize:12, color:W, cursor:"pointer", fontWeight:500,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+                    {sleepData.patient.name}
         </div>
       </div>
 
@@ -173,13 +161,8 @@ export default function SleepDiaryPage() {
         <div style={{ display:"flex", flexDirection:"column", gap:gap }}>
 
           {/* Metric Cards — always 2-col grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:gap }}>
-            {[
-              { label:"Total Sleep Time",       val:"6",  unit:"Hrs",  pct:"30%", icon:totalSleepIcon },
-              { label:"Sleep Efficiency",       val:"45", unit:"Mins", pct:"30%", icon:efficiencyIcon },
-              { label:"Wake After Sleep Onset", val:"75", unit:"%",    pct:"15%", icon:wasoIcon, big:true },
-              { label:"Sleep Latency",          val:"20", unit:"Mins", pct:"15%", icon:latencyIcon },
-            ].map(({ label, val, unit, pct, icon, big }) => (
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:gap }}>
+            {metricCards.map(({ label, val, unit, pct, icon, big }) => (
               <GCard key={label} p={isMobile ? "10px 10px" : "12px 16px"}>
                 <span style={{ fontSize:isMobile?11:14, color:W, fontWeight:700, marginBottom:8, display:"block" }}>{label}</span>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -221,7 +204,7 @@ export default function SleepDiaryPage() {
                                    background:"#0c1e38", border:"2px solid #2090d0", display:"inline-block" }}/>
                     <span style={{ fontSize:10, color:W, fontWeight:700, lineHeight:1.3 }}>Deep<br/>Sleep</span>
                   </div>
-                  <span style={{ fontSize:15, color:W, fontWeight:700, paddingLeft:14 }}>25%</span>
+                                    <span style={{ fontSize:15, color:W, fontWeight:700, paddingLeft:14 }}>{sleepData.sleepStages.deepSleep}%</span>
                 </div>
 
                 {/* Centre — donut only, no absolute labels inside */}
@@ -249,7 +232,7 @@ export default function SleepDiaryPage() {
                     <span style={{ width:9, height:9, borderRadius:"50%", flexShrink:0,
                                    background:"#22a8d4", border:"2px solid #22a8d4", display:"inline-block" }}/>
                   </div>
-                  <span style={{ fontSize:15, color:W, fontWeight:700, paddingRight:14 }}>25%</span>
+                                    <span style={{ fontSize:15, color:W, fontWeight:700, paddingRight:14 }}>{sleepData.sleepStages.remSleep}%</span>
                 </div>
               </div>
 
@@ -260,11 +243,11 @@ export default function SleepDiaryPage() {
                                  background:"#1578be", border:"2px solid #1578be", display:"inline-block" }}/>
                   <span style={{ fontSize:11, color:W, fontWeight:700 }}>Light Sleep</span>
                 </div>
-                <span style={{ fontSize:15, color:W, fontWeight:700 }}>50%</span>
+                <span style={{ fontSize:15, color:W, fontWeight:700 }}>{sleepData.sleepStages.lightSleep}%</span>
               </div>
 
               <p style={{ margin:"6px 0 0", textAlign:"center", fontSize:9, color:W, opacity:0.5 }}>
-                Total sleep time of 8 hours (480 minutes)
+                Total sleep time of {totalSleepHours} hours ({totalSleepMins} minutes)
               </p>
             </GCard>
 
@@ -306,18 +289,18 @@ export default function SleepDiaryPage() {
                   <p style={{ margin:"0 0 10px", fontSize:14, color:W, fontWeight:700 }}>Insights</p>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                     <span style={{ fontSize:13, color:W, fontWeight:500 }}>Sleep Quality Score</span>
-                    <span style={{ fontSize:14, color:W, fontWeight:700 }}>60%</span>
+                                        <span style={{ fontSize:14, color:W, fontWeight:700 }}>{sleepData.insights.sleepQualityScore}%</span>
                   </div>
                   <div style={{ height:4, background:"rgba(255,255,255,0.1)", borderRadius:2, overflow:"hidden" }}>
-                    <div style={{ width:"60%", height:"100%", borderRadius:2, background:"linear-gradient(90deg,#1578be,#22a8d4)" }}/>
+                    <div style={{ width:`${sleepData.insights.sleepQualityScore}%`, height:"100%", borderRadius:2, background:"linear-gradient(90deg,#1578be,#22a8d4)" }}/>
                   </div>
                 </div>
                 <div style={{ height:1, background:"rgba(255,255,255,0.09)" }}/>
                 <div style={{ flex:1, display:"flex", alignItems:"center", paddingTop:8, paddingBottom:8 }}>
                   <div style={{ display:"flex", gap:12, width:"100%" }}>
                     <span style={{ fontSize:13, color:W, opacity:0.6, flexShrink:0, width:100, fontWeight:500 }}>Recent Alerts</span>
-                    <span style={{ fontSize:13, color:W, lineHeight:1.7 }}>
-                      Low Sleep Efficiency<br/>Detected on February<br/>10, 2025
+                                        <span style={{ fontSize:13, color:W, lineHeight:1.7 }}>
+                      {sleepData.insights.recentAlerts}
                     </span>
                   </div>
                 </div>
@@ -325,8 +308,8 @@ export default function SleepDiaryPage() {
                 <div style={{ flex:1, display:"flex", alignItems:"center", paddingTop:8, paddingBottom:8 }}>
                   <div style={{ display:"flex", gap:12, width:"100%" }}>
                     <span style={{ fontSize:13, color:W, opacity:0.6, flexShrink:0, width:100, fontWeight:500 }}>Diagnosis</span>
-                    <span style={{ fontSize:13, color:W, lineHeight:1.7 }}>
-                      Insomnia: trouble falling or staying asleep, the most common sleep disorder
+                                        <span style={{ fontSize:13, color:W, lineHeight:1.7 }}>
+                      {sleepData.insights.diagnosis}
                     </span>
                   </div>
                 </div>
@@ -340,7 +323,7 @@ export default function SleepDiaryPage() {
               <div style={{ display:"flex", flexDirection:"column", padding:"14px 16px" }}>
                 <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
                   <p style={{ margin:"0 0 12px", fontSize:14, color:W, fontWeight:700 }}>Recommendations</p>
-                  {["Limit Evening Screen Time","Create a Restful Environment"].map(r=>(
+                  {sleepData.recommendations.map(r=>(
                     <div key={r} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                       <div style={{ width:3, height:22, borderRadius:2, flexShrink:0, background:"rgba(255,255,255,0.5)" }}/>
                       <span style={{ fontSize:13, color:W }}>{r}</span>
@@ -350,7 +333,7 @@ export default function SleepDiaryPage() {
                 <div style={{ height:1, background:"rgba(255,255,255,0.09)" }}/>
                 <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
                   <p style={{ margin:"0 0 12px", fontSize:14, color:W, fontWeight:700 }}>Sleep Hygiene Tips</p>
-                  {["Be Mindful of Naps","Avoid caffeine before bed"].map(t=>(
+                  {sleepData.sleepHygieneTips.map(t=>(
                     <div key={t} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                       <div style={{ width:3, height:22, borderRadius:2, flexShrink:0, background:"rgba(255,255,255,0.35)" }}/>
                       <span style={{ fontSize:13, color:W }}>{t}</span>
@@ -384,7 +367,6 @@ export default function SleepDiaryPage() {
                         dot={<LineDot/>} isAnimationActive={false}/>
                 </LineChart>
               </ResponsiveContainer>
-              
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", paddingLeft:14, marginTop:4, flexShrink:0 }}>
               {[["good","Good Sleep"],["avg","Average Sleep"],["poor","Poor Sleep"]].map(([q,label])=>(
@@ -430,16 +412,16 @@ export default function SleepDiaryPage() {
                         <>
                           <div style={{ width:`${(dur/60)*100}%`, height:"100%",
                                         background:"#ffffff", borderRadius:"0 3px 3px 0", minWidth:18 }}/>
-                          <div style={{ position:"absolute", left:`calc(${(dur/60)*100}% + 3px)`,
-                                        top:"50%", transform:"translateY(-50%)",
-                                        display:"flex", flexDirection:"column", alignItems:"center" }}>
-                            <svg width="9" height="9" viewBox="0 0 16 16" fill="none"
-                                 stroke="white" strokeWidth="1.5" strokeLinecap="round">
-                              <circle cx="8" cy="8" r="6.5"/>
-                              <path d="M8 4.5v3.5l2.5 1.5"/>
-                            </svg>
-                            <img src={wakeIcon} alt="Wake" style={{ width:34, height:34,
-                                 objectFit:"contain", filter:"brightness(0) invert(1)" }}/>
+                          <div style={{
+                            position:"absolute", left:`calc(${(dur/60)*100}% + 3px)`,
+                            top:"50%", transform:"translateY(-50%)",
+                            display:"flex", alignItems:"center",
+                          }}>
+                            <img src={wakeIcon} alt="Wake" style={{
+                              width:34, height:34, objectFit:"contain",
+                              filter:"brightness(0) invert(1)",
+                              border:"none", display:"block",
+                            }}/>
                           </div>
                         </>
                       ) : (
