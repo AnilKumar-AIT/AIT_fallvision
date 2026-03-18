@@ -1,0 +1,703 @@
+DB Tables:
+----------
+## 2. Database Tables - Sleep Diary
+
+### Table 1: `sleep_nightly_summary` (DynamoDB — Hot)
+
+**Primary table** powering the **4 left sidebar KPIs** + **Sleep Stages donut**.
+One record per patient per night.
+
+`
+PK: oa_id (S)    SK: sleep_date (S)
+`
+
+| Field                | Type     | Description                                         |
+|----------------------|----------|-----------------------------------------------------|
+| oa_id                | S (PK)   | `"OA#oa-20250301-0042"`                           |
+| sleep_date           | S (SK)   | `"2025-03-12"` (the night of — date sleep started)|
+| facility_id          | S        | `"FAC#f-001"`                                     |
+| room_id              | S        | `"ROOM#r-204"`                                    |
+| camera_id            | S        | `"CAM#c-room-204"`                                |
+| bed_entry_ts         | S (ISO)  | `"2025-03-12T21:30:00Z"` (when OA got into bed)  |
+| sleep_onset_ts       | S (ISO)  | `"2025-03-12T21:50:00Z"` (first sleep detected)  |
+| final_wake_ts        | S (ISO)  | `"2025-03-13T06:00:00Z"` (final morning wake)    |
+| bed_exit_ts          | S (ISO)  | `"2025-03-13T06:15:00Z"` (when OA left bed)      |
+| total_sleep_time_min | N        | 360 (6 hours = 360 min)                            |
+| sleep_efficiency_pct | N        | 70.6 (TST / time_in_bed * 100)                     |
+| sleep_latency_min    | N        | 20 (bed_entry to sleep_onset)                       |
+| waso_min             | N        | 75 (total wake time after sleep onset)              |
+| time_in_bed_min      | N        | 510 (bed_entry to bed_exit)                         |
+| deep_sleep_min       | N        | 90 (25% of TST)                                    |
+| deep_sleep_pct       | N        | 25.0                                                |
+| rem_sleep_min        | N        | 90 (25% of TST)                                    |
+| rem_sleep_pct        | N        | 25.0                                                |
+| light_sleep_min      | N        | 180 (50% of TST)                                   |
+| light_sleep_pct      | N        | 50.0                                                |
+| wake_episode_count   | N        | 4                                                   |
+| longest_wake_min     | N        | 40 (longest single wake episode)                    |
+| avg_wake_duration_min| N        | 25.5                                                |
+| movement_index       | N        | 0.45 (0-1, higher = more restless)                  |
+| tst_delta_pct        | N        | 30.0 (% change vs baseline)                        |
+| se_delta_pct         | N        | 30.0                                                |
+| waso_delta_pct       | N        | 15.0                                                |
+| sl_delta_pct         | N        | 20.0                                                |
+| sleep_quality        | S        | `"POOR"` / `"AVERAGE"` / `"GOOD"`             |
+| fall_risk_nighttime  | S        | `"HIGH"` (elevated due to frequent waking)        |
+| notes                | S        | Optional clinician notes                            |
+| computed_by          | S        | `"SLEEP_ENGINE_v1"`                               |
+| ttl                  | N        | Epoch + 2592000 (30 days in Dynamo)                 |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK                        | Purpose                                  |
+|-------|-------------|---------------------------|------------------------------------------|
+| GSI-1 | facility_id | sleep_date                | All patients' sleep for a given night    |
+| GSI-2 | facility_id | sleep_quality#sleep_date  | Filter by POOR sleep quality first       |
+| GSI-3 | room_id     | sleep_date                | Room-based sleep lookup                  |
+
+**Widget mapping:**
+
+- **Total Sleep Time card** → `total_sleep_time_min` + `tst_delta_pct`
+- **Sleep Efficiency card** → `sleep_efficiency_pct` + `se_delta_pct`
+- **WASO card** → `waso_min` + `waso_delta_pct`
+- **Sleep Latency card** → `sleep_latency_min` + `sl_delta_pct`
+- **Sleep Stages donut** → `deep_sleep_pct`, `rem_sleep_pct`, `light_sleep_pct`
+- **Donut center text** → `total_sleep_time_min` formatted as hours
+
+---
+
+### Table 2: `sleep_duration_daily` (DynamoDB → S3 Parquet archive)
+
+Powers the **"Sleep Duration Over Time"** line chart (7-day trend).
+
+`
+PK: oa_id (S)    SK: sleep_date (S)
+`
+
+> **Note:** This is effectively a projection of `sleep_nightly_summary` — the
+> same table can serve both widgets. However, for the 7-day chart we may also
+> want historical data beyond DynamoDB TTL, hence S3 archival.
+
+| Field                | Type     | Description                                         |
+|----------------------|----------|-----------------------------------------------------|
+| oa_id                | S (PK)   | `"OA#oa-20250301-0042"`                           |
+| sleep_date           | S (SK)   | `"2025-03-12"`                                    |
+| facility_id          | S        | `"FAC#f-001"`                                     |
+| total_sleep_hrs      | N        | 6.0                                                 |
+| sleep_quality        | S        | `"POOR"` / `"AVERAGE"` / `"GOOD"`             |
+| quality_zone         | S        | Maps to chart color zone                            |
+
+**Quality zone thresholds** (clinical sleep guidelines for older adults):
+
+| Zone         | TST Range      | Color  | Clinical Basis                       |
+|--------------|---------------|--------|--------------------------------------|
+| Good Sleep   | >= 7 hours     | Green  | Recommended for 65+ (NSF guidelines) |
+| Average Sleep| 5 - 6.99 hours| Yellow | Below optimal but functional         |
+| Poor Sleep   | < 5 hours      | Red    | Associated with fall risk, cognitive decline |
+
+**Chart mapping:** X-axis = `sleep_date` (days 1-7), Y-axis = `total_sleep_hrs`.
+Background shading from zone thresholds.
+
+> **Implementation:** This data lives in `sleep_nightly_summary` — no separate
+> table needed. The API endpoint simply queries the last 7 days from that table.
+
+---
+
+### Table 3: `sleep_movement_hourly` (DynamoDB → S3 Parquet archive)
+
+Powers the **"Body Movement Analysis"** stacked bar chart (movement by hour of night).
+
+`
+PK: oa_id (S)    SK: sleep_date#hour (S)
+`
+
+| Field                 | Type     | Description                                         |
+|-----------------------|----------|-----------------------------------------------------|
+| oa_id                 | S (PK)   | `"OA#oa-20250301-0042"`                           |
+| sleep_date_hour       | S (SK)   | `"2025-03-12#22"` (sleep_date + hour 0-23)       |
+| facility_id           | S        | `"FAC#f-001"`                                     |
+| hour_label            | S        | `"10PM"` (display-friendly)                       |
+| total_minutes         | N        | 60 (minutes in this hour during sleep window)       |
+| no_movement_min       | N        | 42 (minutes with no detected movement)              |
+| moderate_movement_min | N        | 12 (minutes with moderate movement)                 |
+| high_movement_min     | N        | 6 (minutes with high movement)                      |
+| no_movement_pct       | N        | 70.0                                                |
+| moderate_movement_pct | N        | 20.0                                                |
+| high_movement_pct     | N        | 10.0                                                |
+| avg_movement_intensity| N        | 0.35 (0-1 scale)                                   |
+| position_changes      | N        | 3 (number of body position changes in this hour)    |
+| dominant_position     | S        | `"SUPINE"` / `"LEFT_LATERAL"` / `"RIGHT_LATERAL"` / `"PRONE"` / `"SITTING"` |
+| camera_id             | S        | `"CAM#c-room-204"`                                |
+| ttl                   | N        | Epoch + 604800 (7 days in Dynamo)                   |
+
+**Movement classification thresholds** (from pose keypoint delta analysis):
+
+| Category          | Keypoint Delta/Frame | Description                              |
+|-------------------|---------------------|------------------------------------------|
+| No Movement       | < 2 px avg          | Stillness — deep or REM sleep likely     |
+| Moderate Movement | 2 - 15 px avg       | Repositioning, restless — light sleep    |
+| High Movement     | > 15 px avg         | Active tossing, potential wake episode   |
+
+**Query pattern:**
+
+`
+oa_id = "OA#oa-xxx" AND sleep_date_hour BETWEEN "2025-03-12#22" AND "2025-03-13#06"
+`
+
+**Chart mapping:** Each stacked bar = one hour.
+Dark blue = `no_movement_min`, Medium blue = `moderate_movement_min`,
+Light blue = `high_movement_min`.
+
+---
+
+### Table 4: `sleep_wake_episodes` (DynamoDB)
+
+Powers the **"Wake Episodes"** timeline chart and the **detail table** on the right.
+
+`
+PK: oa_id (S)    SK: sleep_date#episode_num (S)
+`
+
+| Field                | Type     | Description                                         |
+|----------------------|----------|-----------------------------------------------------|
+| oa_id                | S (PK)   | `"OA#oa-20250301-0042"`                           |
+| sleep_date_episode   | S (SK)   | `"2025-03-12#01"` (sleep_date + episode number)  |
+| facility_id          | S        | `"FAC#f-001"`                                     |
+| episode_id           | S        | `"WEP#wep-uuid-xxxx"`                            |
+| wake_start_ts        | S (ISO)  | `"2025-03-12T23:00:00Z"` (when wake began)       |
+| wake_end_ts          | S (ISO)  | `"2025-03-12T23:10:00Z"` (when sleep resumed)    |
+| duration_min         | N        | 10                                                  |
+| time_label           | S        | `"11:00 PM"` (display-friendly)                   |
+| hour_of_night        | N        | 23 (0-23, for Y-axis positioning)                   |
+| minutes_into_night   | N        | 90 (minutes since bed_entry, for X-axis)            |
+| movement_level       | S        | `"LOW"` / `"MODERATE"` / `"HIGH"`              |
+| probable_cause       | S        | `"RESTLESSNESS"` / `"BATHROOM"` / `"NOISE"` / `"PAIN"` / `"UNKNOWN"` |
+| left_bed             | BOOL     | false (did OA leave bed during this episode?)       |
+| fall_risk_flag       | BOOL     | true if left_bed=true (nighttime fall risk)         |
+| camera_id            | S        | `"CAM#c-room-204"`                                |
+| ttl                  | N        | Epoch + 2592000 (30 days)                           |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK                             | Purpose                              |
+|-------|-------------|--------------------------------|--------------------------------------|
+| GSI-1 | facility_id | wake_start_ts                  | All wake episodes facility-wide      |
+| GSI-2 | facility_id | fall_risk_flag#wake_start_ts   | Nighttime fall-risk events           |
+
+**Chart mapping (Wake Episodes timeline):**
+
+- Y-axis = `hour_of_night` mapped to time label (10PM → 6AM)
+- X-axis = `duration_min` (0 → 60 min)
+- Each horizontal bar: starts at episode start, length = `duration_min`
+- Bed icons at start/end of each episode
+- Right-side table: `time_label` + `duration_min`
+
+**Example data from screenshot:**
+
+| Episode # | wake_start_ts        | duration_min | time_label | hour_of_night |
+|-----------|---------------------|-------------|------------|---------------|
+| 01        | 2025-03-12T23:00:00Z| 10          | 11:00 PM   | 23            |
+| 02        | 2025-03-13T01:10:00Z| 22          | 01:10 AM   | 1             |
+| 03        | 2025-03-13T03:30:00Z| 40          | 03:30 AM   | 3             |
+| 04        | 2025-03-13T06:00:00Z| 30          | 06:00 AM   | 6             |
+
+---
+
+### Table 5: `sleep_stages_epochs` (S3 Parquet only — high-frequency)
+
+Stores the **per-epoch sleep stage classification** (30-second epochs, clinical standard).
+Used for detailed analytics and to compute `sleep_nightly_summary`.
+
+> **NOT in DynamoDB** — too many records (one per 30 seconds over 8+ hours = ~960 records/night).
+
+`
+S3 Path: s3://aitcare-{env}/sleep_stages/
+         facility_id=f-001/oa_id=oa-xxx/
+         sleep_date=2025-03-12/
+         sleep_epochs_2025-03-12.parquet
+`
+
+| Column             | Type      | Description                                  |
+|--------------------|-----------|----------------------------------------------|
+| oa_id              | STRING    | Patient ID                                   |
+| sleep_date         | STRING    | Night date (YYYY-MM-DD)                      |
+| epoch_num          | INT       | Sequential epoch number (1, 2, 3, ...)       |
+| epoch_start_ts     | TIMESTAMP | `"2025-03-12T21:50:00Z"`                   |
+| epoch_end_ts       | TIMESTAMP | `"2025-03-12T21:50:30Z"`                   |
+| stage              | STRING    | `"WAKE"` / `"LIGHT"` / `"DEEP"` / `"REM"` |
+| confidence         | FLOAT     | 0.0-1.0 classification confidence            |
+| movement_intensity | FLOAT     | 0.0-1.0 average movement in epoch            |
+| body_position      | STRING    | `"SUPINE"` / `"LEFT_LATERAL"` / `"RIGHT_LATERAL"` / `"PRONE"` |
+| respiratory_rate   | FLOAT     | Estimated breaths/min (from torso oscillation)|
+| heart_rate_est     | FLOAT     | Estimated HR (from subtle chest movement, if detectable) |
+| camera_id          | STRING    | Source camera                                |
+
+**Sleep stage classification from camera (no wearable):**
+
+| Stage | Camera-Based Indicators                                          |
+|-------|------------------------------------------------------------------|
+| WAKE  | Eyes open (face keypoints), high movement, position changes      |
+| LIGHT | Reduced movement, occasional repositioning, regular breathing    |
+| DEEP  | Minimal movement, stable position, slow regular breathing        |
+| REM   | Eye movement (if detectable), body stillness, irregular breathing|
+
+> **Accuracy note:** Camera-based sleep staging is inherently less accurate than
+> PSG (polysomnography) or even actigraphy. The model provides **estimated stages**
+> with confidence scores. Clinical validation required. For the POC, a simplified
+> 3-stage model (WAKE / LIGHT / DEEP+REM) may be more reliable.
+
+**Queried via Athena for analytics:**
+
+`sql
+-- Sleep stage distribution for one night
+SELECT stage, COUNT(*) as epoch_count,
+       COUNT(*) * 0.5 as minutes,
+       ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as pct
+FROM aitcare_sleep_db.sleep_stages_epochs
+WHERE oa_id = 'oa-xxx' AND sleep_date = '2025-03-12'
+  AND stage != 'WAKE'
+GROUP BY stage
+ORDER BY stage;
+`
+
+---
+
+### Table 6: `sleep_alerts` (DynamoDB)
+
+Sleep-specific alerts. Extends the `oa_alerts` pattern from the GAIT screen
+but with sleep-specific alert types.
+
+`
+PK: oa_id (S)    SK: alert_ts (S)
+`
+
+| Field            | Type     | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| oa_id            | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| alert_ts         | S (SK)   | `"2025-03-13T03:30:00Z"`                      |
+| alert_id         | S        | `"ALR#slp-uuid-xxxx"`                          |
+| facility_id      | S        | `"FAC#f-001"`                                  |
+| alert_type       | S        | See alert types table below                      |
+| severity         | S        | `"INFO"` / `"WARNING"` / `"CRITICAL"`      |
+| message          | S        | `"Extended wake episode (40 min) at 3:30 AM"`  |
+| metric_name      | S        | `"wake_episode_duration"`                      |
+| metric_value     | N        | 40.0                                             |
+| threshold_value  | N        | 30.0                                             |
+| episode_ref      | S        | `"WEP#wep-uuid-xxxx"` (linked wake episode)   |
+| acknowledged     | BOOL     | false                                            |
+| acknowledged_by  | S        | Staff ID                                         |
+| ttl              | N        | Epoch + 7776000 (90 days)                        |
+
+**Sleep-specific alert types:**
+
+| alert_type              | Trigger Condition                              | Severity |
+|-------------------------|------------------------------------------------|----------|
+| LOW_TOTAL_SLEEP         | TST < 5 hours                                  | WARNING  |
+| HIGH_WASO               | WASO > 60 minutes                              | WARNING  |
+| HIGH_SLEEP_LATENCY      | Sleep latency > 30 minutes                     | INFO     |
+| FREQUENT_WAKE_EPISODES  | wake_episode_count > 4 per night               | WARNING  |
+| EXTENDED_WAKE_EPISODE   | Single wake episode > 30 minutes               | WARNING  |
+| BED_EXIT_NIGHTTIME      | OA left bed between 10PM-6AM (fall risk!)      | CRITICAL |
+| NO_RETURN_TO_BED        | OA left bed > 15 min and not returned           | CRITICAL |
+| POOR_SLEEP_TREND        | 3+ consecutive nights of POOR quality           | WARNING  |
+| LOW_DEEP_SLEEP          | Deep sleep < 10% of TST                        | INFO     |
+| EXCESSIVE_MOVEMENT      | Movement index > 0.7 for the night             | INFO     |
+
+**GSI-1:** `facility_id` (PK), `severity#alert_ts` (SK) — Critical alerts first.
+
+---
+
+### Table 7: `sleep_baselines` (DynamoDB)
+
+Stores the **baseline/reference sleep metrics** for each patient.
+Used to compute the trend badges (30%, 15%, 20%) on the KPI cards.
+
+`
+PK: oa_id (S)    SK: baseline_type (S)
+`
+
+| Field                 | Type     | Description                                      |
+|-----------------------|----------|--------------------------------------------------|
+| oa_id                 | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| baseline_type         | S (SK)   | `"ADMISSION"` / `"7DAY_AVG"` / `"30DAY_AVG"` |
+| facility_id           | S        | `"FAC#f-001"`                                  |
+| baseline_tst_min      | N        | 420 (7 hours baseline)                           |
+| baseline_se_pct       | N        | 85.0                                             |
+| baseline_waso_min     | N        | 45                                               |
+| baseline_sl_min       | N        | 15                                               |
+| baseline_deep_pct     | N        | 20.0                                             |
+| baseline_rem_pct      | N        | 22.0                                             |
+| baseline_wake_count   | N        | 2                                                |
+| computed_at           | S (ISO)  | `"2025-03-13T06:30:00Z"`                       |
+| sample_nights         | N        | 7 (number of nights in average)                  |
+
+**Delta computation (application layer):**
+
+`
+tst_delta_pct = (current_tst - baseline_tst) / baseline_tst * 100
+  Example: (360 - 420) / 420 * 100 = -14.3% (rounded to display as shown)
+`
+
+> **Note:** The 30% shown on screen may compare against the 7-day rolling average
+> or admission baseline. The API returns both so the frontend can choose.
+
+
+
+## 3. Database Tables - GAIT
+
+### Table 1: `older_adults` (DynamoDB)
+
+The **patient/resident master record** — referenced by every widget on this screen.
+
+`
+PK: facility_id (S)    SK: oa_id (S)
+`
+
+| Field               | Type     | Description                                      |
+|---------------------|----------|--------------------------------------------------|
+| facility_id         | S (PK)   | `"FAC#f-001"`                                  |
+| oa_id               | S (SK)   | `"OA#oa-20250301-0042"`                        |
+| mrn                 | S        | Medical Record Number (encrypted)                |
+| name_encrypted      | B        | AES-256-GCM encrypted full name                  |
+| dob_encrypted       | B        | AES-256-GCM encrypted date of birth              |
+| age                 | N        | Age in years (de-identified OK)                  |
+| sex                 | S        | `"M"` / `"F"` / `"O"`                      |
+| room_id             | S        | `"ROOM#r-204"`                                 |
+| bed_id              | S        | `"BED#b-204-A"`                                |
+| admission_date      | S (ISO)  | `"2025-01-15T00:00:00Z"`                       |
+| mobility_class      | S        | `"INDEPENDENT"` / `"ASSISTED"` / `"WHEELCHAIR"` |
+| risk_factors        | L        | `["diabetes","neuropathy","polypharmacy"]`      |
+| baseline_step_freq  | N        | 78.0 (steps/min at admission)                    |
+| baseline_stride     | N        | 0.71 (meters at admission)                       |
+| baseline_balance    | N        | 76.5 (% at admission)                            |
+| primary_dx          | S        | Encrypted primary diagnosis                      |
+| medications_hash    | S        | Hash reference to medication list                |
+| status              | S        | `"ACTIVE"` / `"DISCHARGED"` / `"DECEASED"` |
+| created_at          | S (ISO)  | Record creation timestamp                        |
+| updated_at          | S (ISO)  | Last update timestamp                            |
+| ttl                 | N        | DynamoDB TTL (epoch) — post-discharge            |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK          | Purpose                                    |
+|-------|-------------|-------------|--------------------------------------------|
+| GSI-1 | oa_id       | —           | Reverse lookup by patient ID               |
+| GSI-2 | room_id     | oa_id       | Room-based queries                         |
+| GSI-3 | status      | facility_id | Active patients per facility               |
+
+**Why baselines are stored here:** The KPI cards show `↓10%`, `↓15%` — computed as
+`(current - baseline) / baseline * 100`. Baseline captured at admission.
+
+---
+
+### Table 2: `gait_metrics_snapshot` (DynamoDB — Hot, last 24h)
+
+The **current/live GAIT summary** powering the **4 left sidebar KPIs** + **Fall Risk Level**.
+
+`
+PK: oa_id (S)    SK: snapshot_ts (S)
+`
+
+| Field               | Type     | Description                                      |
+|---------------------|----------|--------------------------------------------------|
+| oa_id               | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| snapshot_ts         | S (SK)   | `"2025-03-13T14:30:00Z"` (ISO 8601)           |
+| facility_id         | S        | `"FAC#f-001"`                                  |
+| camera_id           | S        | `"CAM#c-hall-02"`                              |
+| step_frequency      | N        | 70.0 (steps/min)                                 |
+| step_freq_delta     | N        | -10.0 (% change vs baseline)                    |
+| stride_length       | N        | 0.6 (meters)                                    |
+| stride_delta        | N        | -15.0 (% change vs baseline)                    |
+| balance_score       | N        | 65.0 (0-100%)                                   |
+| balance_delta       | N        | -15.0 (% change vs baseline)                    |
+| body_tilt_angle     | N        | 8.5 (degrees from vertical)                     |
+| body_tilt_dir       | S        | `"LEFT"` / `"RIGHT"` / `"BALANCED"`        |
+| tilt_zone           | S        | `"NORMAL"` / `"SLIGHT"` / `"SIGNIFICANT"`  |
+| arm_swing_sym       | N        | 0.72 (0-1 symmetry index)                       |
+| fall_risk_level     | S        | `"HIGH"`                                       |
+| fall_risk_score     | N        | 0.82 (0.0-1.0 continuous)                       |
+| risk_factors_active | L        | `["high_body_tilt","low_step_freq"]`           |
+| computed_by         | S        | `"RULE_ENGINE_v1"` / `"LSTM_v2"`             |
+| ttl                 | N        | Epoch + 86400 (24h TTL)                          |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK                | Purpose                                    |
+|-------|-------------|-------------------|--------------------------------------------|
+| GSI-1 | facility_id | fall_risk_level   | All HIGH risk patients in facility         |
+| GSI-2 | facility_id | snapshot_ts       | Latest snapshots for all patients          |
+
+**Widget mapping:**
+
+- **Step Frequency card** → `step_frequency` + `step_freq_delta`
+- **Stride Length card** → `stride_length` + `stride_delta`
+- **Balance Score card** → `balance_score` + `balance_delta`
+- **Fall Risk Level card** → `fall_risk_level`
+- **Body Tilt gauge** → `body_tilt_angle` + `body_tilt_dir` + `tilt_zone`
+
+---
+
+### Table 3: `gait_daily_steps` (DynamoDB → S3 Parquet archive)
+
+Powers the **"Step Frequency Over Time"** bar chart (30 days x daily aggregates).
+
+`
+PK: oa_id (S)    SK: date (S)
+`
+
+| Field            | Type     | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| oa_id            | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| date             | S (SK)   | `"2025-03-13"` (YYYY-MM-DD)                   |
+| facility_id      | S        | `"FAC#f-001"`                                  |
+| total_steps      | N        | 4235                                             |
+| avg_step_freq    | N        | 68.3 (steps/min daily average)                   |
+| min_step_freq    | N        | 42.0                                             |
+| max_step_freq    | N        | 89.0                                             |
+| active_minutes   | N        | 127 (minutes with detected walking)              |
+| step_threshold   | N        | 3000 (daily target)                              |
+| above_threshold  | BOOL     | true (total_steps > step_threshold)              |
+| avg_stride_len   | N        | 0.58 (meters, daily average)                     |
+| avg_balance      | N        | 62.0 (%, daily average)                          |
+| walking_sessions | N        | 14 (number of distinct walking bouts)            |
+| ttl              | N        | Epoch + 2592000 (30 days in Dynamo)              |
+
+**No GSI needed** — always queried by `oa_id` + date range.
+After 30 days → archived to S3 Parquet via nightly job.
+
+**Chart mapping:** Each bar in "Step Frequency Over Time" = one row.
+X-axis = `date` (day 1-30), Y-axis = `total_steps`.
+Blue threshold line = `step_threshold` (3000).
+
+---
+
+### Table 4: `stride_length_hourly` (DynamoDB → S3 Parquet archive)
+
+Powers the **"Stride Length Distribution"** grouped bar chart (by time-of-day, 3 categories).
+
+`
+PK: oa_id (S)    SK: date_hour (S)
+`
+
+| Field            | Type     | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| oa_id            | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| date_hour        | S (SK)   | `"2025-03-13#14"` (date + hour 0-23)           |
+| facility_id      | S        | `"FAC#f-001"`                                  |
+| hour_label       | S        | `"2PM"` (display-friendly)                     |
+| total_steps      | N        | 820                                              |
+| steps_ideal      | N        | 540 (stride >= 0.65m)                            |
+| steps_moderate   | N        | 200 (stride 0.45-0.64m)                          |
+| steps_suboptimal | N        | 80 (stride < 0.45m)                              |
+| avg_stride_len   | N        | 0.61 (meters for this hour)                      |
+| median_stride    | N        | 0.63                                             |
+| ttl              | N        | Epoch + 604800 (7 days in Dynamo)                |
+
+**Query pattern:**
+
+`
+oa_id = X AND date_hour BETWEEN "2025-03-13#00" AND "2025-03-13#23"
+`
+
+After 7 days → S3 Parquet archive.
+
+**Stride classification thresholds** (from clinical literature):
+
+| Category   | Stride Length Range | Clinical Basis              |
+|------------|--------------------|-----------------------------|
+| Ideal      | >= 0.65 m          | Normal OA stride            |
+| Moderate   | 0.45 - 0.64 m     | Reduced but functional      |
+| Suboptimal | < 0.45 m           | Fall risk indicator         |
+
+**Chart mapping:** Each group of 3 bars at a time slot = one row.
+Dark blue = `steps_ideal`, Medium = `steps_moderate`, Light = `steps_suboptimal`.
+
+---
+
+### Table 5: `arm_swing_waveform` (S3 Parquet only — high-frequency)
+
+Powers the **"Arm Swing Symmetry"** line chart (acceleration vs time within a gait cycle).
+
+> **NOT stored in DynamoDB** — too high-frequency. S3 Parquet only.
+
+`
+S3 Path: s3://aitcare-{env}/gait_waveforms/
+         facility_id=f-001/oa_id=oa-xxx/date=2025-03-13/
+         arm_swing_{session_id}.parquet
+`
+
+| Column         | Type      | Description                              |
+|----------------|-----------|------------------------------------------|
+| oa_id          | STRING    | Patient ID                               |
+| session_id     | STRING    | Walking bout identifier                  |
+| sample_ts      | TIMESTAMP | Millisecond-precision timestamp          |
+| time_sec       | FLOAT     | Relative time in gait cycle (s)          |
+| accel_left_x   | FLOAT     | Left arm acceleration X (m/s^2)          |
+| accel_left_y   | FLOAT     | Left arm acceleration Y                  |
+| accel_right_x  | FLOAT     | Right arm acceleration X                 |
+| accel_right_y  | FLOAT     | Right arm acceleration Y                 |
+| accel_net      | FLOAT     | Net symmetry signal (plotted on Y-axis)  |
+| symmetry_index | FLOAT     | 0.0-1.0 (1.0 = perfect symmetry)        |
+| cycle_id       | INT       | Which gait cycle within session          |
+| camera_id      | STRING    | Source camera                            |
+
+**Queried via Athena:**
+
+`sql
+SELECT time_sec, accel_net
+FROM aitcare_gait_db.arm_swing_waveforms
+WHERE oa_id = 'X' AND date = '2025-03-13'
+  AND session_id = (
+    SELECT MAX(session_id) FROM aitcare_gait_db.arm_swing_waveforms
+    WHERE oa_id = 'X' AND date = '2025-03-13'
+  )
+ORDER BY time_sec DESC;
+`
+
+**Important:** Since FallVision uses cameras (not wearables), "acceleration" is
+**derived from pose keypoint velocity** (second derivative of wrist position from
+keypoints 9/10). The dashboard displays it as acceleration for clinical familiarity.
+
+---
+
+### Table 6: `body_tilt_readings` (DynamoDB — recent; S3 Parquet — archive)
+
+Powers the **"Body Tilt Analysis"** gauge widget.
+
+`
+PK: oa_id (S)    SK: reading_ts (S)
+`
+
+| Field            | Type     | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| oa_id            | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| reading_ts       | S (SK)   | `"2025-03-13T14:30:00Z"`                      |
+| facility_id      | S        | `"FAC#f-001"`                                  |
+| tilt_angle       | N        | 8.5 (degrees from vertical)                     |
+| tilt_direction   | S        | `"LEFT"` / `"RIGHT"` / `"CENTER"`          |
+| tilt_zone        | S        | `"NORMAL"` / `"SLIGHT"` / `"SIGNIFICANT"`  |
+| shoulder_diff_px | N        | Pixel diff between kp5/kp6 Y-coordinates        |
+| hip_diff_px      | N        | Pixel diff between kp11/kp12 Y-coordinates      |
+| torso_angle      | N        | Angle of shoulder-hip midline (degrees)          |
+| session_avg_tilt | N        | 7.2 (average over walking session)              |
+| camera_id        | S        | `"CAM#c-hall-02"`                              |
+| ttl              | N        | Epoch + 86400 (24h in Dynamo)                    |
+
+**Gauge zone thresholds:**
+
+| Zone        | Angle Range | Visual    |
+|-------------|-------------|-----------|
+| NORMAL      | 0 - 5 deg   | Green     |
+| SLIGHT      | 5 - 12 deg  | Yellow    |
+| SIGNIFICANT | > 12 deg    | Red       |
+
+**Derivation from pose:** Body tilt = angle between midpoint of shoulders
+`(kp5+kp6)/2` to midpoint of hips `(kp11+kp12)/2` vs vertical.
+Pure geometry from YOLOv8-Pose keypoints.
+
+---
+
+### Table 7: `oa_alerts` (DynamoDB)
+
+Powers the **"Recent Alerts"** card and the notification bell icon.
+
+`
+PK: oa_id (S)    SK: alert_ts (S)
+`
+
+| Field            | Type     | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| oa_id            | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| alert_ts         | S (SK)   | `"2025-02-20T09:15:00Z"`                      |
+| alert_id         | S        | `"ALR#alr-uuid-xxxx"`                          |
+| facility_id      | S        | `"FAC#f-001"`                                  |
+| alert_type       | S        | `"LOW_STEP_FREQUENCY"` / `"HIGH_TILT"` / `"FALL_DETECTED"` / `"STRIDE_DECLINE"` / `"BALANCE_DROP"` / `"SWING_ASYMMETRY"` |
+| severity         | S        | `"INFO"` / `"WARNING"` / `"CRITICAL"`      |
+| message          | S        | `"Low step frequency detected on [20 Feb]"`   |
+| metric_name      | S        | `"step_frequency"`                             |
+| metric_value     | N        | 48.0                                             |
+| threshold_value  | N        | 60.0                                             |
+| acknowledged     | BOOL     | false                                            |
+| acknowledged_by  | S        | Nurse/staff ID who acknowledged                  |
+| acknowledged_at  | S (ISO)  | Timestamp of acknowledgment                      |
+| camera_id        | S        | `"CAM#c-hall-02"`                              |
+| ttl              | N        | Epoch + 7776000 (90 days)                        |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK                     | Purpose                                    |
+|-------|-------------|------------------------|--------------------------------------------|
+| GSI-1 | facility_id | alert_ts               | All alerts for facility, newest first      |
+| GSI-2 | facility_id | severity#alert_ts      | All CRITICAL alerts first                  |
+| GSI-3 | alert_type  | alert_ts               | Analytics: count by alert type per month   |
+
+---
+
+### Table 8: `oa_recommendations` (DynamoDB)
+
+Powers the **"Recommendations"** card.
+
+`
+PK: oa_id (S)    SK: rec_ts (S)
+`
+
+| Field            | Type     | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| oa_id            | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| rec_ts           | S (SK)   | `"2025-03-13T08:00:00Z"`                      |
+| rec_id           | S        | `"REC#rec-uuid-xxxx"`                          |
+| facility_id      | S        | `"FAC#f-001"`                                  |
+| rec_type         | S        | `"EXERCISE"` / `"ENVIRONMENT"` / `"MEDICAL"` / `"BEHAVIORAL"` / `"EQUIPMENT"` |
+| message          | S        | `"Increase walking pace to improve step frequency"` |
+| triggered_by     | S        | `"ALR#alr-uuid-xxxx"` (linked alert)           |
+| priority         | S        | `"HIGH"` / `"MEDIUM"` / `"LOW"`            |
+| status           | S        | `"ACTIVE"` / `"COMPLETED"` / `"DISMISSED"` |
+| assigned_to      | S        | Staff ID (nurse/PT)                              |
+| evidence_metric  | S        | `"step_frequency"`                             |
+| evidence_value   | N        | 70.0                                             |
+| target_value     | N        | 78.0 (goal)                                     |
+| generated_by     | S        | `"RULE_ENGINE"` / `"LSTM_MODEL"` / `"CLINICIAN"` |
+| ttl              | N        | Epoch + 2592000 (30 days)                        |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK                  | Purpose                                    |
+|-------|-------------|---------------------|--------------------------------------------|
+| GSI-1 | facility_id | priority#rec_ts     | All active HIGH priority recommendations   |
+
+---
+
+### Table 9: `fall_risk_summary` (DynamoDB)
+
+Powers the **"Fall Risk Summary"** card and the **Fall Risk Level** KPI.
+
+`
+PK: oa_id (S)    SK: assessment_ts (S)
+`
+
+| Field               | Type     | Description                                      |
+|---------------------|----------|--------------------------------------------------|
+| oa_id               | S (PK)   | `"OA#oa-20250301-0042"`                        |
+| assessment_ts       | S (SK)   | `"2025-03-13T14:30:00Z"`                      |
+| facility_id         | S        | `"FAC#f-001"`                                  |
+| risk_level          | S        | `"HIGH"`                                       |
+| risk_score          | N        | 0.82 (0.0-1.0)                                  |
+| primary_factor      | S        | `"High body tilt detected"`                    |
+| contributing_factors| L        | `["low_step_freq","stride_decline","balance_drop"]` |
+| factor_scores       | M        | `{"tilt":0.9,"step_freq":0.7,...}`             |
+| trend_7d            | S        | `"WORSENING"` / `"STABLE"` / `"IMPROVING"` |
+| prior_risk_level    | S        | `"MODERATE"` (previous assessment)             |
+| model_version       | S        | `"rule_engine_v1.2"`                           |
+| requires_review     | BOOL     | true (risk changed from prior)                   |
+| reviewed_by         | S        | Clinician who reviewed                           |
+| reviewed_at         | S (ISO)  | Review timestamp                                 |
+| ttl                 | N        | Epoch + 7776000 (90 days)                        |
+
+**Global Secondary Indexes:**
+
+| GSI   | PK          | SK                            | Purpose                              |
+|-------|-------------|-------------------------------|--------------------------------------|
+| GSI-1 | facility_id | risk_level#assessment_ts      | All HIGH risk patients in facility   |
+| GSI-2 | facility_id | requires_review (sparse)      | Unreviewed risk changes              |
+
+---

@@ -9,6 +9,43 @@ import seniorsIcon     from "../assets/seniors.svg";
 import caregiversIcon  from "../assets/caregivers.svg";
 import useWindowSize   from "../hooks/useWindowSize";
 
+/* ── Theme definitions per page ── */
+const THEMES = {
+  dark: {
+    navBg:        "linear-gradient(135deg, #0c1e3a 0%, #162d50 50%, #1a3a66 100%)",
+    navFallback:  "#0c1e3a",
+    border:       "rgba(255,255,255,0.08)",
+    activeBg:     "rgba(255,255,255,0.15)",
+    text:         "#ffffff",
+    iconFilter:   "brightness(0) invert(1)",
+    btnBg:        "rgba(255,255,255,0.12)",
+    iconStroke:   "white",
+    iconFill:     "white",
+    hamburgerBg:  "#0c1e3a",
+    hamburgerBorder: "rgba(255,255,255,0.15)",
+  },
+  light: {
+    navBg:        "linear-gradient(135deg, #1a6ad4 0%, #2b7de0 50%, #4da4f0 100%)",
+    navFallback:  "#2b7de0",
+    border:       "rgba(255,255,255,0.15)",
+    activeBg:     "rgba(255,255,255,0.22)",
+    text:         "#ffffff",
+    iconFilter:   "brightness(0) invert(1)",
+    btnBg:        "rgba(255,255,255,0.15)",
+    iconStroke:   "white",
+    iconFill:     "white",
+    hamburgerBg:  "#2b7de0",
+    hamburgerBorder: "rgba(255,255,255,0.2)",
+  },
+};
+
+/* Map each page to a theme — all pages use dark nav */
+const PAGE_THEME = {};
+
+function getTheme(activePage) {
+  return THEMES[PAGE_THEME[activePage] || "dark"];
+}
+
 const NAV_ITEMS = [
   { label: "Home",        icon: homeIcon        },
   { label: "Falls",       icon: fallsIcon       },
@@ -20,14 +57,11 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ activePage, onNavigate }) {
-  const { isMobile, isTablet } = useWindowSize();
+  const { isMobile } = useWindowSize();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = getTheme(activePage);
 
-  // icon-only on tablet, full on desktop, drawer on mobile
-  const iconOnly = isTablet;
-  const sidebarWidth = isMobile ? 0 : isTablet ? 64 : 185;
-
-  /* ── Mobile drawer overlay ── */
+  /* ── Mobile: hamburger + drawer ── */
   if (isMobile) {
     return (
       <>
@@ -35,15 +69,15 @@ export default function Sidebar({ activePage, onNavigate }) {
         <button
           onClick={() => setMobileOpen(o => !o)}
           style={{
-            position: "fixed", top: 12, left: 12, zIndex: 1000,
-            width: 40, height: 40, borderRadius: 10,
-            background: "#07101b", border: "1px solid #122030",
+            position: "fixed", top: 10, left: 10, zIndex: 1100,
+            width: 38, height: 38, borderRadius: 10,
+            background: t.hamburgerBg, border: `1px solid ${t.hamburgerBorder}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-               stroke="white" strokeWidth="2" strokeLinecap="round">
+               stroke={t.iconStroke} strokeWidth="2" strokeLinecap="round">
             {mobileOpen
               ? <><path d="M18 6L6 18"/><path d="M6 6l12 12"/></>
               : <><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></>
@@ -55,147 +89,136 @@ export default function Sidebar({ activePage, onNavigate }) {
         {mobileOpen && (
           <div
             onClick={() => setMobileOpen(false)}
-            style={{
-              position: "fixed", inset: 0, zIndex: 998,
-              background: "rgba(0,0,0,0.6)",
-            }}
+            style={{ position: "fixed", inset: 0, zIndex: 1050, background: "rgba(0,0,0,0.5)" }}
           />
         )}
 
-        {/* Drawer */}
-        <aside style={{
-          position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 999,
-          width: 200,
-          background: "#07101b",
-          borderRight: "1px solid #122030",
-          display: "flex", flexDirection: "column",
-          paddingTop: 14, paddingBottom: 8,
-          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+        {/* Drawer — slides from top */}
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 1060,
+          background: t.navBg,
+          borderBottom: `1px solid ${t.border}`,
+          padding: "12px 14px",
+          display: "flex", flexDirection: "column", gap: 10,
+          transform: mobileOpen ? "translateY(0)" : "translateY(-100%)",
           transition: "transform 0.25s ease",
         }}>
-          <SidebarContent
-            activePage={activePage}
-            onNavigate={(page) => { onNavigate(page); setMobileOpen(false); }}
-            iconOnly={false}
-          />
-        </aside>
+          {/* Nav icons row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", paddingTop: 40 }}>
+            {NAV_ITEMS.map(({ label, icon }) => {
+              const active = label === activePage;
+              return (
+                <div
+                  key={label}
+                  onClick={() => { onNavigate(label); setMobileOpen(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 10px", borderRadius: 8, cursor: "pointer",
+                    background: active ? t.activeBg : "transparent",
+                  }}
+                >
+                  <img src={icon} alt={label} style={{ width: 22, height: 22, filter: t.iconFilter, opacity: active ? 1 : 0.65 }} />
+                  <span style={{ fontSize: 12, color: t.text, fontWeight: active ? 700 : 400, opacity: active ? 1 : 0.7 }}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </>
     );
   }
 
-  /* ── Desktop / Tablet sidebar ── */
+          /* ── Desktop / Tablet: 3 content-sized pills with space between ── */
+  const pillH = 52;
+  const pillStyle = {
+    background: "linear-gradient(180deg, #0a1a30 0%, #0e2240 40%, #112a50 100%)",
+    border: "2px solid rgba(255,255,255,0.6)",
+    borderRadius: 14,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    position: "relative", overflow: "visible",
+    height: pillH, flexShrink: 0,
+  };
+
   return (
-    <aside style={{
-      width: sidebarWidth, flexShrink: 0,
-      background: "#07101b",
-      borderRight: "1px solid #122030",
-      display: "flex", flexDirection: "column",
-      paddingTop: 14, paddingBottom: 8,
-      transition: "width 0.2s ease",
+    <header style={{
+      position: "absolute", top: 0, left: 0, right: 0, zIndex: 100,
+      height: 68, flexShrink: 0,
+      background: "transparent",
+      display: "flex", alignItems: "flex-end",
+      padding: "0 20px 6px",
+      gap: 14,
     }}>
-      <SidebarContent
-        activePage={activePage}
-        onNavigate={onNavigate}
-        iconOnly={iconOnly}
-      />
-    </aside>
-  );
-}
-
-/* ── Shared inner content ── */
-function SidebarContent({ activePage, onNavigate, iconOnly }) {
-  return (
-    <>
-      {/* Logo */}
-      <div style={{
-        display: "flex", justifyContent: "center",
-        marginBottom: 18, padding: iconOnly ? "0 4px" : "0 10px",
-      }}>
-        <img src={aitLogo} alt="AIT Logo" style={{
-          width: iconOnly ? 44 : 155,
-          height: iconOnly ? 44 : 155,
-          objectFit: "contain",
-          transition: "width 0.2s, height 0.2s",
-        }} />
-      </div>
-
-      {/* Nav items */}
-      <nav style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      {/* ── Pill 1: Nav icons ── */}
+      <nav style={{ ...pillStyle, gap: 6, padding: "0 10px" }}>
         {NAV_ITEMS.map(({ label, icon }) => {
           const active = label === activePage;
           return (
             <div
               key={label}
               onClick={() => onNavigate(label)}
-              title={iconOnly ? label : undefined}
+              title={label}
               style={{
-                display: "flex",
-                flexDirection: iconOnly ? "column" : "row",
-                alignItems: "center",
-                justifyContent: iconOnly ? "center" : "flex-start",
-                padding: iconOnly ? "10px 0" : "10px 14px",
+                position: "relative",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 46, height: "100%",
                 cursor: "pointer",
-                gap: iconOnly ? 3 : 12,
-                background: active ? "rgba(26,120,200,0.14)" : "transparent",
-                borderLeft: active ? "3px solid #2090d0" : "3px solid transparent",
               }}
             >
+              {active && (
+                <div style={{
+                  position: "absolute", top: -2, left: "50%", transform: "translateX(-50%)",
+                  width: 0, height: 0,
+                  borderLeft: "18px solid transparent",
+                  borderRight: "18px solid transparent",
+                  borderTop: "14px solid rgba(255,255,255,0.92)",
+                  zIndex: 2, pointerEvents: "none",
+                }} />
+              )}
               <img src={icon} alt={label} style={{
-                width: 26, height: 26,
-                filter: "brightness(0) invert(1)",
-                opacity: active ? 1 : 0.75,
-                flexShrink: 0,
+                width: 30, height: 30,
+                filter: t.iconFilter,
+                opacity: active ? 1 : 0.5,
+                position: "relative", zIndex: 1,
               }} />
-              {iconOnly
-                ? <span style={{ fontSize: 9, color: "#ffffff", opacity: active ? 1 : 0.6, textAlign: "center" }}>{label}</span>
-                : <span style={{ fontSize: 13, color: "#ffffff", fontWeight: active ? 600 : 400, opacity: active ? 1 : 0.75 }}>{label}</span>
-              }
             </div>
           );
         })}
       </nav>
 
-      {/* Bottom icons */}
-      <div style={{
-        display: "flex",
-        flexDirection: iconOnly ? "column" : "row",
-        gap: 6,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingTop: 10, paddingBottom: 18,
-        borderTop: "1px solid rgba(255,255,255,0.07)",
-        marginTop: 8,
-      }}>
-        <div style={{ width:30, height:30, background:"rgba(255,255,255,0.12)", borderRadius:7,
-                      display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-          <svg width="15" height="15" viewBox="0 0 14 14" fill="white">
-            <rect x="0" y="0" width="5.5" height="5.5" rx="1"/>
-            <rect x="8.5" y="0" width="5.5" height="5.5" rx="1"/>
-            <rect x="0" y="8.5" width="5.5" height="5.5" rx="1"/>
-            <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1"/>
-          </svg>
-        </div>
-        <div style={{ width:30, height:30, background:"rgba(255,255,255,0.12)", borderRadius:7,
-                      display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"
-               stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10 2h4v4M14 2l-5 5M6 14H2v-4M2 14l5-5"/>
-          </svg>
-        </div>
-        <div style={{ width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7" strokeLinecap="round">
+      {/* Space between Pill 1 and Pills 2+3 */}
+      <div style={{ flex: 1 }} />
+
+      {/* ── Pill 2: Insights and Alerts ── */}
+      <div style={{ ...pillStyle, gap: 10, padding: "0 20px", cursor: "pointer" }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4l2 2"/>
+        </svg>
+        <span style={{ fontSize: 14, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>Insights and Alerts</span>
+      </div>
+
+      {/* ── Pill 3: Bell + User ── */}
+      <div style={{ ...pillStyle, gap: 6, padding: "0 14px" }}>
+        <div style={{
+          width: 38, height: 38, borderRadius: 8,
+          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>
         </div>
-        <div style={{ width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7" strokeLinecap="round">
+        <div style={{
+          width: 38, height: 38, borderRadius: 8,
+          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
             <circle cx="12" cy="12" r="10"/>
             <circle cx="12" cy="9" r="3"/>
             <path d="M6.2 19.4a6 6 0 0111.6 0"/>
           </svg>
         </div>
       </div>
-    </>
+    </header>
   );
 }

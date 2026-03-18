@@ -7,8 +7,8 @@
   "metrics": {
     "totalSleepTime": { "value": 6, "unit": "Hrs", "change": 30, "trend": "down" },
     "sleepEfficiency": { "value": 45, "unit": "Mins", "change": 30, "trend": "down" },
-    "wakeAfterSleepOnset": { "value": 75, "unit": "%", "change": 15, "trend": "down" },
-    "sleepLatency": { "value": 20, "unit": "Mins", "change": 15, "trend": "down" }
+        "wakeAfterSleepOnset": { "value": 75, "unit": "Mins", "change": 15, "trend": "down" },
+    "sleepLatency": { "value": 20, "unit": "Hrs", "change": 20, "trend": "down" }
   },
   "sleepStages": {
     "deepSleep": 25,
@@ -38,15 +38,15 @@
     { "time": "5:30", "value": 20 },
     { "time": "6Am",  "value": 12 }
   ],
-  "wakeEpisodes": [
-    { "label": "6Am",  "duration": 46, "wakeTime": "10:30Pm", "wakeDur": "10min" },
+    "wakeEpisodes": [
+    { "label": "6Am",  "duration": 46, "wakeTime": "11:00Pm", "wakeDur": "10min" },
     { "label": "5Am",  "duration": 0,  "wakeTime": null,       "wakeDur": null    },
     { "label": "4Am",  "duration": 0,  "wakeTime": null,       "wakeDur": null    },
-    { "label": "3Am",  "duration": 46, "wakeTime": "12:50Am",  "wakeDur": "20min" },
+    { "label": "3Am",  "duration": 46, "wakeTime": "01:10Am",  "wakeDur": "22min" },
     { "label": "2am",  "duration": 0,  "wakeTime": null,       "wakeDur": null    },
-    { "label": "1Am",  "duration": 32, "wakeTime": "02:50Am",  "wakeDur": "30min" },
+    { "label": "1Am",  "duration": 32, "wakeTime": "03:10Am",  "wakeDur": "40min" },
     { "label": "12Am", "duration": 0,  "wakeTime": null,       "wakeDur": null    },
-    { "label": "11pm", "duration": 20, "wakeTime": "05:20Am",  "wakeDur": "20min" },
+    { "label": "11pm", "duration": 20, "wakeTime": "06:00Am",  "wakeDur": "30min" },
     { "label": "10pm", "duration": 0,  "wakeTime": null,       "wakeDur": null    }
   ],
   "insights": {

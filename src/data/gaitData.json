@@ -1,0 +1,69 @@
+{
+  "patient": {
+    "id": "PT-20240204",
+    "name": "Patient/User ID",
+    "date": "February 4, 2025"
+  },
+  "metrics": {
+    "stepFrequency": { "value": 70, "unit": "steps/min", "change": 10, "trend": "down" },
+    "strideLength": { "value": 0.6, "unit": "Meters", "change": 15, "trend": "down" },
+    "balanceScore": { "value": 65, "unit": "% Stability", "change": 15, "trend": "down" },
+    "fallRiskLevel": { "value": "HIGH", "description": "Immediate Attention Required: High Fall Risk Detected" }
+  },
+  "stepFrequencyOverTime": [
+    { "day": "1", "steps": 3200 }, { "day": "2", "steps": 2800 },
+    { "day": "3", "steps": 3500 }, { "day": "4", "steps": 2600 },
+    { "day": "5", "steps": 3100 }, { "day": "6", "steps": 3400 },
+    { "day": "7", "steps": 2900 }, { "day": "8", "steps": 3600 },
+    { "day": "9", "steps": 2500 }, { "day": "10", "steps": 3300 },
+    { "day": "11", "steps": 3000 }, { "day": "12", "steps": 2700 },
+    { "day": "13", "steps": 3800 }, { "day": "14", "steps": 3100 },
+    { "day": "15", "steps": 2400 }, { "day": "16", "steps": 3500 },
+    { "day": "17", "steps": 2900 }, { "day": "18", "steps": 3200 },
+    { "day": "19", "steps": 2600 }, { "day": "20", "steps": 3700 },
+    { "day": "21", "steps": 3000 }, { "day": "22", "steps": 2800 },
+    { "day": "23", "steps": 3400 }, { "day": "24", "steps": 3100 },
+    { "day": "25", "steps": 2500 }, { "day": "26", "steps": 3600 },
+    { "day": "27", "steps": 2900 }, { "day": "28", "steps": 3300 },
+    { "day": "29", "steps": 2700 }, { "day": "30", "steps": 3500 }
+  ],
+  "stepSummary": {
+    "totalSteps": 50000,
+    "targetSteps": 60000,
+    "remainingSteps": 30000
+  },
+  "armSwingSymmetry": [
+    { "time": 7.8, "left": 1.8, "right": 2.0 },
+    { "time": 7.6, "left": 3.5, "right": 3.2 },
+    { "time": 7.4, "left": 1.2, "right": 1.5 },
+    { "time": 7.2, "left": 2.8, "right": 3.0 },
+    { "time": 7.0, "left": 1.0, "right": 1.2 },
+    { "time": 6.8, "left": 3.8, "right": 3.5 },
+    { "time": 6.6, "left": 2.0, "right": 2.2 }
+  ],
+  "strideLengthDistribution": [
+    { "time": "12AM", "ideal": 380, "moderate": 60, "suboptimal": 20 },
+    { "time": "2AM",  "ideal": 50,  "moderate": 20, "suboptimal": 10 },
+    { "time": "4AM",  "ideal": 30,  "moderate": 10, "suboptimal": 5 },
+    { "time": "6AM",  "ideal": 200, "moderate": 40, "suboptimal": 15 },
+    { "time": "8AM",  "ideal": 420, "moderate": 70, "suboptimal": 25 },
+    { "time": "10AM", "ideal": 350, "moderate": 50, "suboptimal": 30 },
+    { "time": "12PM", "ideal": 300, "moderate": 80, "suboptimal": 20 },
+    { "time": "2PM",  "ideal": 280, "moderate": 60, "suboptimal": 35 },
+    { "time": "4PM",  "ideal": 320, "moderate": 55, "suboptimal": 25 },
+    { "time": "6PM",  "ideal": 250, "moderate": 45, "suboptimal": 20 },
+    { "time": "8PM",  "ideal": 180, "moderate": 30, "suboptimal": 15 },
+    { "time": "10PM", "ideal": 100, "moderate": 25, "suboptimal": 10 }
+  ],
+  "bodyTilt": {
+    "value": 50,
+    "label": "Balanced",
+    "leftLabel": "Left",
+    "rightLabel": "Right"
+  },
+  "insights": {
+    "recentAlerts": "Low step frequency detected on [20 feb]",
+    "recommendations": "Increase walking pace to improve step frequency",
+    "fallRiskSummary": "High body tilt detected"
+  }
+}
