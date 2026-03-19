@@ -1,47 +1,22 @@
-import { useState }   from "react";
+import { useState, useEffect } from "react";
 import wakeIcon       from "../assets/wake_icon.svg";
 import totalSleepIcon from "../assets/total_sleep_time.svg";
 import efficiencyIcon from "../assets/sleep_efficiency.svg";
 import latencyIcon    from "../assets/sleep_latency.svg";
 import wasoIcon       from "../assets/wake_after_sleep.svg";
 import useWindowSize  from "../hooks/useWindowSize";
-import sleepData      from "../data/sleepData.json";
+import apiService     from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorMessage   from "../components/ErrorMessage";
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, BarChart, Bar,
 } from "recharts";
 
-/* ═══════════════════════ DATA (from sleepData.json) ═══════════════════════ */
-const sleepDurationData = sleepData.sleepDurationOverTime.map(d => ({
-  day: d.day, hours: d.hours, q: d.quality,
-}));
-
-const movementRaw = sleepData.bodyMovement.map(d => ({
-  t: d.time, h: d.value,
-}));
-
-const wakeEpisodes = sleepData.wakeEpisodes.map(d => ({
-  label: d.label, dur: d.duration, wakeTime: d.wakeTime, wakeDur: d.wakeDur,
-}));
-
-const stagesData = [
-  { name:"REM Sleep",   value:sleepData.sleepStages.remSleep,   color:"#5bb8e8" },
-  { name:"Light Sleep", value:sleepData.sleepStages.lightSleep, color:"#c5e4f3" },
-  { name:"Deep Sleep",  value:sleepData.sleepStages.deepSleep,  color:"#1a6fb5" },
-];
-
-const totalSleepHours = Math.floor(sleepData.sleepStages.totalMinutes / 60);
-const totalSleepMins  = sleepData.sleepStages.totalMinutes;
-
-const metricCards = [
-  { label:"Total Sleep Time",       val:String(sleepData.metrics.totalSleepTime.value),       unit:sleepData.metrics.totalSleepTime.unit,       pct:`${sleepData.metrics.totalSleepTime.change}%`,       icon:totalSleepIcon },
-  { label:"Sleep Efficiency",       val:String(sleepData.metrics.sleepEfficiency.value),      unit:sleepData.metrics.sleepEfficiency.unit,      pct:`${sleepData.metrics.sleepEfficiency.change}%`,      icon:efficiencyIcon },
-  { label:"Wake After Sleep\nOnset", val:String(sleepData.metrics.wakeAfterSleepOnset.value),  unit:sleepData.metrics.wakeAfterSleepOnset.unit,  pct:`${sleepData.metrics.wakeAfterSleepOnset.change}%`,  icon:wasoIcon },
-  { label:"Sleep Latency",          val:String(sleepData.metrics.sleepLatency.value),         unit:sleepData.metrics.sleepLatency.unit,         pct:`${sleepData.metrics.sleepLatency.change}%`,         icon:latencyIcon },
-];
-
 /* ═══════════════════════ HELPERS ════════════════════════════════════════ */
+
 const W = "#ffffff";
+const RESIDENT_ID = "RES#res-20251112-0001"; // Default resident for demo
 
 /* Lollipop shape: thin line + white filled circle on top */
 const LollipopBar = ({ x, y, width, height }) => {
@@ -92,8 +67,97 @@ const Pill = ({ children }) => (
 
 /* ═══════════════════════ PAGE ════════════════════════════════════════════ */
 export default function SleepDiaryPage() {
-  const [date] = useState(sleepData.patient.date);
+  const [sleepData, setSleepData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { isMobile, isTablet, isDesktop } = useWindowSize();
+
+  useEffect(() => {
+    loadSleepData();
+  }, []);
+
+  const loadSleepData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiService.getSleepData(RESIDENT_ID);
+      setSleepData(data);
+    } catch (err) {
+      setError(err);
+      console.error('Failed to load sleep data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+                          if (loading) {
+    return (
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 90, minHeight: "100vh" }}>
+        <LoadingSpinner message="Loading sleep data..." />
+      </main>
+    );
+  }
+
+  if (error || !sleepData) {
+    return (
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 90, minHeight: "100vh" }}>
+        <ErrorMessage error={error} onRetry={loadSleepData} />
+      </main>
+    );
+  }
+
+  // Transform data for rendering
+  const sleepDurationData = sleepData.sleepDurationOverTime.map(d => ({
+    day: d.day, hours: d.hours, q: d.quality,
+  }));
+
+  const movementRaw = sleepData.bodyMovement.map(d => ({
+    t: d.time, h: d.value,
+  }));
+
+      // Create FIXED timeline for wake episodes (10PM - 6AM)
+  const sleepTimeline = [
+    { hour: 22, label: "10PM" },
+    { hour: 23, label: "11PM" },
+    { hour: 0, label: "12AM" },
+    { hour: 1, label: "1AM" },
+    { hour: 2, label: "2AM" },
+    { hour: 3, label: "3AM" },
+    { hour: 4, label: "4AM" },
+    { hour: 5, label: "5AM" },
+    { hour: 6, label: "6AM" },
+  ];
+
+    // Map actual wake episodes to timeline using hourLabel from backend
+  const wakeEpisodesData = sleepTimeline.map(timeSlot => {
+    // Find wake episode matching this hour (use hourLabel from backend)
+    const episode = sleepData.wakeEpisodes.find(e => e.hourLabel === timeSlot.label);
+    return {
+      label: timeSlot.label,
+      dur: episode ? episode.duration : 0,
+      wakeTime: episode ? episode.wakeTime : '',
+      wakeDur: episode ? episode.wakeDur : '',
+      hasData: !!episode
+    };
+  });
+
+  const wakeEpisodes = wakeEpisodesData;
+
+  const stagesData = [
+    { name:"REM Sleep",   value:sleepData.sleepStages.remSleep,   color:"#5bb8e8" },
+    { name:"Light Sleep", value:sleepData.sleepStages.lightSleep, color:"#c5e4f3" },
+    { name:"Deep Sleep",  value:sleepData.sleepStages.deepSleep,  color:"#1a6fb5" },
+  ];
+
+  const totalSleepHours = Math.floor(sleepData.sleepStages.totalMinutes / 60);
+  const totalSleepMins  = sleepData.sleepStages.totalMinutes;
+
+  const metricCards = [
+    { label:"Total Sleep Time",       val:String(sleepData.metrics.totalSleepTime.value),       unit:sleepData.metrics.totalSleepTime.unit,       pct:`${sleepData.metrics.totalSleepTime.change}%`,       icon:totalSleepIcon },
+    { label:"Sleep Efficiency",       val:String(sleepData.metrics.sleepEfficiency.value),      unit:sleepData.metrics.sleepEfficiency.unit,      pct:`${sleepData.metrics.sleepEfficiency.change}%`,      icon:efficiencyIcon },
+    { label:"Wake After Sleep\nOnset", val:String(sleepData.metrics.wakeAfterSleepOnset.value),  unit:sleepData.metrics.wakeAfterSleepOnset.unit,  pct:`${sleepData.metrics.wakeAfterSleepOnset.change}%`,  icon:wasoIcon },
+    { label:"Sleep Latency",          val:String(sleepData.metrics.sleepLatency.value),         unit:sleepData.metrics.sleepLatency.unit,         pct:`${sleepData.metrics.sleepLatency.change}%`,         icon:latencyIcon },
+  ];
 
   const gap           = isMobile ? 8 : 10;
   const threeCol      = isDesktop;
@@ -103,7 +167,7 @@ export default function SleepDiaryPage() {
   const headerFont    = isMobile ? 14 : isTablet ? 16 : 18;
   const wakeRightW    = isMobile ? 60 : isTablet ? 80 : 110;
 
-  return (
+          return (
     <main style={{
       flex: 1,
       padding: isMobile ? "10px 10px" : "12px 16px",
@@ -112,8 +176,11 @@ export default function SleepDiaryPage() {
       flexDirection: "column",
       gap: gap,
       minWidth: 0,
-      /* push content below the top nav bar */
-      paddingTop: isMobile ? 56 : 68,
+      position: "relative",
+      zIndex: 1,
+      /* INCREASED - More space below navbar */
+      paddingTop: isMobile ? 80 : 120,
+      marginTop: 0,
     }}>
 
       {/* ── Main Grid: 3 columns on desktop ── */}
@@ -303,7 +370,7 @@ export default function SleepDiaryPage() {
             </div>
           </GCard>
 
-                    {/* Wake Episodes — lines with white circles at end */}
+                              {/* Wake Episodes — lines with white circles at end */}
           <GCard p="14px 14px" style={{ flex: threeCol ? 1 : "unset", minHeight: threeCol ? 0 : 320 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:5, flexShrink:0 }}>
               <p style={{ margin:0, fontSize:headerFont, color:W, fontWeight:700 }}>Wake Episodes</p>
@@ -312,7 +379,7 @@ export default function SleepDiaryPage() {
                   <span style={{ fontSize:11, color:W, minWidth:60, textAlign:"center" }}>Time</span>
                   <span style={{ fontSize:11, color:W, minWidth:48, textAlign:"center" }}>Duration</span>
                 </div>
-                {wakeEpisodes.filter(e=>e.wakeTime).map(({ wakeTime, wakeDur },i)=>(
+                {wakeEpisodes.filter(e=>e.hasData && e.wakeTime).map(({ wakeTime, wakeDur, label },i)=>(
                   <div key={i} style={{ display:"flex", gap:8, alignItems:"center" }}>
                     <Pill>{wakeTime}</Pill>
                     <Pill>{wakeDur}</Pill>
@@ -322,11 +389,11 @@ export default function SleepDiaryPage() {
             </div>
             <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
               <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"space-evenly", minHeight:0 }}>
-                {wakeEpisodes.map(({ label, dur }, idx) => (
+                {wakeEpisodes.map(({ label, dur, hasData }, idx) => (
                   <div key={idx} style={{ display:"flex", alignItems:"center", gap:6 }}>
                     <span style={{ width:34, fontSize:11, color:W, flexShrink:0, textAlign:"right" }}>{label}</span>
                     <div style={{ flex:1, height:12, position:"relative", display:"flex", alignItems:"center" }}>
-                      {dur > 0 ? (
+                      {hasData && dur > 0 ? (
                         <>
                           {/* Thin line */}
                           <div style={{ width:`${(dur/60)*100}%`, height:2,
@@ -352,7 +419,7 @@ export default function SleepDiaryPage() {
                         <div style={{ width:"100%", height:1, background:"rgba(255,255,255,0.07)" }}/>
                       )}
                     </div>
-                                        <div style={{ width:wakeRightW, flexShrink:0 }}/>
+                    <div style={{ width:wakeRightW, flexShrink:0 }}/>
                   </div>
                 ))}
               </div>

@@ -1,5 +1,4 @@
 import { useState }    from "react";
-import aitLogo         from "../assets/ait.svg";
 import gaitIcon        from "../assets/gait.svg";
 import adlIcon         from "../assets/ADL.svg";
 import fallsIcon       from "../assets/falls.svg";
@@ -139,17 +138,18 @@ export default function Sidebar({ activePage, onNavigate }) {
     height: pillH, flexShrink: 0,
   };
 
-  return (
+    return (
     <header style={{
-      position: "absolute", top: 0, left: 0, right: 0, zIndex: 100,
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
       height: 68, flexShrink: 0,
       background: "transparent",
       display: "flex", alignItems: "flex-end",
       padding: "0 20px 6px",
       gap: 14,
+      pointerEvents: "none", // Allow clicks to pass through empty areas
     }}>
-      {/* ── Pill 1: Nav icons ── */}
-      <nav style={{ ...pillStyle, gap: 6, padding: "0 10px" }}>
+            {/* ── Pill 1: Nav icons ── */}
+      <nav style={{ ...pillStyle, gap: 6, padding: "0 10px", pointerEvents: "auto" }}>
         {NAV_ITEMS.map(({ label, icon }) => {
           const active = label === activePage;
           return (
@@ -188,8 +188,8 @@ export default function Sidebar({ activePage, onNavigate }) {
       {/* Space between Pill 1 and Pills 2+3 */}
       <div style={{ flex: 1 }} />
 
-      {/* ── Pill 2: Insights and Alerts ── */}
-      <div style={{ ...pillStyle, gap: 10, padding: "0 20px", cursor: "pointer" }}>
+            {/* ── Pill 2: Insights and Alerts ── */}
+      <div style={{ ...pillStyle, gap: 10, padding: "0 20px", cursor: "pointer", pointerEvents: "auto" }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round">
           <circle cx="12" cy="12" r="10"/>
           <path d="M12 8v4l2 2"/>
@@ -197,8 +197,8 @@ export default function Sidebar({ activePage, onNavigate }) {
         <span style={{ fontSize: 14, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>Insights and Alerts</span>
       </div>
 
-      {/* ── Pill 3: Bell + User ── */}
-      <div style={{ ...pillStyle, gap: 6, padding: "0 14px" }}>
+            {/* ── Pill 3: Bell + User ── */}
+      <div style={{ ...pillStyle, gap: 6, padding: "0 14px", pointerEvents: "auto" }}>
         <div style={{
           width: 38, height: 38, borderRadius: 8,
           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",

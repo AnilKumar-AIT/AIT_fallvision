@@ -1,7 +1,9 @@
 // eslint-disable-next-line no-unused-vars
-import { useState }   from "react";
+import { useState, useEffect } from "react";
 import useWindowSize  from "../hooks/useWindowSize";
-import gaitData       from "../data/gaitData.json";
+import apiService     from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorMessage   from "../components/ErrorMessage";
 import stepFreqIcon   from "../assets/step_frequency.svg";
 import strideLenIcon  from "../assets/stride_length.svg";
 import balanceIcon    from "../assets/balance_score.svg";
@@ -13,25 +15,8 @@ import {
   ResponsiveContainer, ComposedChart,
 } from "recharts";
 
-/* ═══════════════════════ DATA ═══════════════════════ */
-const stepFreqData = gaitData.stepFrequencyOverTime.map((d) => ({
-  day:   d.day,
-  steps: d.steps,
-  above: d.steps >= 3000,
-}));
-
-const armSwingData = gaitData.armSwingSymmetry.map(d => ({
-  time: d.time, left: d.left, right: d.right,
-}));
-
-const strideData = gaitData.strideLengthDistribution;
-
-const metricCards = [
-  { label:"Step Frequency",  val:String(gaitData.metrics.stepFrequency.value),  unit:gaitData.metrics.stepFrequency.unit,  pct:`${gaitData.metrics.stepFrequency.change}%`,  icon:stepFreqIcon  },
-  { label:"Stride Length",   val:String(gaitData.metrics.strideLength.value),   unit:gaitData.metrics.strideLength.unit,   pct:`${gaitData.metrics.strideLength.change}%`,   icon:strideLenIcon },
-  { label:"Balance Score",   val:`${gaitData.metrics.balanceScore.value}%`,     unit:"steps/min",                          pct:`${gaitData.metrics.balanceScore.change}%`,   icon:balanceIcon   },
-  { label:"Fall Risk Level", val:gaitData.metrics.fallRiskLevel.value,          unit:"",                                   pct:"",                                            icon:fallRiskIcon, isRisk:true },
-];
+/* ═══════════════════════ CONSTANTS ═══════════════════════ */
+const RESIDENT_ID = "RES#res-20251112-0001"; // Default resident for demo
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 const W = "#ffffff";
@@ -98,20 +83,91 @@ const StepLollipop = ({ x, y, width, height, payload }) => {
   );
 };
 
-/* White bar shape for stride length */
-const WhiteBar = ({ x, y, width, height }) => (
-  <rect x={x} y={y} width={width} height={height} fill="#ffffff" rx={2}/>
-);
-
 /* ═══════════════════════ PAGE ═══════════════════════ */
 export default function GaitPage() {
+  const [gaitData, setGaitData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { isMobile, isTablet, isDesktop } = useWindowSize();
+
+  useEffect(() => {
+    loadGaitData();
+  }, []);
+
+  const loadGaitData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiService.getGaitData(RESIDENT_ID);
+      setGaitData(data);
+    } catch (err) {
+      setError(err);
+      console.error('Failed to load gait data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
+        <LoadingSpinner message="Loading gait data..." />
+      </main>
+    );
+  }
+
+  if (error || !gaitData) {
+    return (
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
+        <ErrorMessage error={error} onRetry={loadGaitData} />
+      </main>
+    );
+  }
+
+  // Transform data for rendering
+  const stepFreqData = gaitData.stepFrequencyOverTime.map((d) => ({
+    day:   d.day,
+    steps: d.steps,
+    above: d.steps >= 3000,
+  }));
+
+  const armSwingData = gaitData.armSwingSymmetry.map(d => ({
+    time: d.time, left: d.left, right: d.right,
+  }));
+
+  const strideData = gaitData.strideLengthDistribution || [];
+  
+  // Debug logs
+  console.log('Gait Data Loaded:', gaitData);
+  console.log('Stride Data:', strideData);
+  console.log('Stride Data Length:', strideData.length);
+
+  // Dynamic font size based on text length - FIXED FOR MODERATE
+  const getFontSize = (text, isMobile, isTablet) => {
+    const len = String(text).length;
+    if (len <= 4) {
+      // "HIGH" - full size
+      return isMobile ? 28 : isTablet ? 40 : 52;
+    }
+    if (len <= 6) {
+      // "MEDIUM" - 65%
+      return isMobile ? 18 : isTablet ? 26 : 34;
+    }
+    // "MODERATE" (8 chars) - 40% to fit in fixed box
+    return isMobile ? 12 : isTablet ? 16 : 21;
+  };
+
+  const metricCards = [
+    { label:"Step Frequency",  val:String(gaitData.metrics.stepFrequency.value),  unit:gaitData.metrics.stepFrequency.unit,  pct:`${gaitData.metrics.stepFrequency.change}%`,  icon:stepFreqIcon  },
+    { label:"Stride Length",   val:String(gaitData.metrics.strideLength.value),   unit:gaitData.metrics.strideLength.unit,   pct:`${gaitData.metrics.strideLength.change}%`,   icon:strideLenIcon },
+    { label:"Balance Score",   val:`${gaitData.metrics.balanceScore.value}%`,     unit:"steps/min",                          pct:`${gaitData.metrics.balanceScore.change}%`,   icon:balanceIcon   },
+    { label:"Fall Risk Level", val:gaitData.metrics.fallRiskLevel.value,          unit:"",                                   pct:"",                                            icon:fallRiskIcon, isRisk:true },
+  ];
 
   const gap      = isMobile ? 8 : 10;
   const threeCol = isDesktop;
   const headerFont = isMobile ? 14 : isTablet ? 16 : 18;
   const legendFont = isMobile ? 9 : isTablet ? 10 : 12;
-  const metricVal  = isMobile ? 28 : isTablet ? 40 : 52;
   const metricUnit = isMobile ? 10 : isTablet ? 13 : 16;
   const iconCircle = isMobile ? 44 : isTablet ? 56 : 70;
   const iconImg    = isMobile ? 24 : isTablet ? 32 : 38;
@@ -122,12 +178,20 @@ export default function GaitPage() {
       flex: 1,
       padding: isMobile ? "10px 10px" : "12px 16px",
       overflowY: "auto",
-      display: "flex", flexDirection: "column", gap,
-      minWidth: 0, minHeight: 0,
-      fontFamily: "'Segoe UI', sans-serif", color: W,
-      paddingTop: isMobile ? 56 : 68,
+      display: "flex",
+      flexDirection: "column",
+      gap,
+      minWidth: 0,
+      fontFamily: "'Segoe UI', sans-serif",
+      color: W,
+      position: "relative",
+      zIndex: 1,
+      paddingTop: isMobile ? 80 : 90,
       paddingBottom: isMobile ? 10 : 6,
-      height: threeCol ? "100vh" : "auto", minHeight: "100vh", boxSizing: "border-box",
+      marginTop: 0,
+      height: threeCol ? "100vh" : "auto",
+      minHeight: threeCol ? 0 : "100vh",
+      boxSizing: "border-box",
     }}>
 
       {/* ── Full-height grid: metric card spans all rows ── */}
@@ -186,12 +250,20 @@ export default function GaitPage() {
                   flex: 1,
                   border: "1.5px solid #ffffff",
                   borderRadius: 10,
-                  padding: isMobile ? "4px 4px" : "10px 8px",
+                  padding: isMobile ? "4px 8px" : "10px 12px",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  minWidth: 0,
+                  overflow: "hidden",
                 }}>
                   <span style={{
-                    fontSize: metricVal, fontWeight: 700, lineHeight: 1,
+                    fontSize: getFontSize(val, isMobile, isTablet),
+                    fontWeight: 700, 
+                    lineHeight: 1,
                     color: isRisk ? "#ff4444" : W,
+                    textAlign: "center",
+                    width: "100%",
+                    padding: "0 4px",
+                    boxSizing: "border-box",
                   }}>{val}</span>
                   {unit && <span style={{ fontSize: metricUnit, color: W, opacity: 0.8, marginTop: 2 }}>{unit}</span>}
                 </div>
