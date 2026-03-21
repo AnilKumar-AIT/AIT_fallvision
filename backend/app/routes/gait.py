@@ -42,12 +42,20 @@ async def get_gait_data(resident_id: str) -> Dict:
             )
             stride_hourly = db_service.decimal_to_float(response.get('Items', []))
         
+        # Fetch alerts, suggestions, and health score
+        alerts = db_service.get_recent_alerts(resident_id, limit=10)
+        suggestions = db_service.get_resident_suggestions(resident_id, limit=10)
+        health_score = db_service.get_health_score(resident_id)
+        
         # Transform to React format
         gait_data = transformer.transform_gait_data(
             resident_info,
             gait_snapshot,
             daily_steps,
-            stride_hourly
+            stride_hourly,
+            alerts,
+            suggestions,
+            health_score
         )
         
         return gait_data
@@ -68,5 +76,74 @@ async def get_gait_metrics(resident_id: str) -> Dict:
         return snapshot
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{resident_id}/alerts")
+async def get_gait_alerts(resident_id: str, limit: int = 10) -> Dict:
+    """Get recent gait-related alerts"""
+    try:
+        alerts = db_service.get_recent_alerts(resident_id, limit=limit)
+        # Filter for gait domain only
+        gait_alerts = [a for a in alerts if a.get('domain') == 'GAIT']
+        return {
+            "resident_id": resident_id,
+            "count": len(gait_alerts),
+            "alerts": gait_alerts
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{resident_id}/suggestions")
+async def get_gait_suggestions(resident_id: str, limit: int = 10) -> Dict:
+    """Get AI-generated gait suggestions"""
+    try:
+        suggestions = db_service.get_resident_suggestions(resident_id, limit=limit)
+        # Filter for gait/activity domain (more lenient)
+        gait_suggestions = [s for s in suggestions 
+                           if s.get('target_domain') in ['GAIT', 'ACTIVITY', 'FALL', 'CROSS_DOMAIN']]
+        
+        # If no domain-specific suggestions, return all
+        if not gait_suggestions:
+            gait_suggestions = suggestions
+        
+        return {
+            "resident_id": resident_id,
+            "count": len(gait_suggestions),
+            "suggestions": gait_suggestions
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{resident_id}/health-score")
+async def get_gait_health_score(resident_id: str) -> Dict:
+    """Get health score with fall risk details"""
+    try:
+        health_score = db_service.get_health_score(resident_id)
+        if not health_score:
+            raise HTTPException(status_code=404, detail=f"No health score found for {resident_id}")
+        return health_score
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{resident_id}/debug")
+async def debug_gait_data(resident_id: str) -> Dict:
+    """Debug endpoint to see raw data from all tables"""
+    try:
+        return {
+            "resident_info": db_service.get_resident_info(resident_id),
+            "gait_snapshot": db_service.get_latest_gait_snapshot(resident_id),
+            "daily_steps_count": len(db_service.get_gait_daily_steps(resident_id, days=30)),
+            "stride_hourly_count": len(db_service.get_stride_length_hourly(resident_id, datetime.now().strftime("%Y-%m-%d"))),
+            "alerts": db_service.get_recent_alerts(resident_id, limit=10),
+            "suggestions": db_service.get_resident_suggestions(resident_id, limit=10),
+            "health_score": db_service.get_health_score(resident_id)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -66,29 +66,34 @@ const Pill = ({ children }) => (
 );
 
 /* ═══════════════════════ PAGE ════════════════════════════════════════════ */
-export default function SleepDiaryPage() {
+export default function SleepDiaryPage({ residentId, showBackButton, onBackToResident }) {
   const [sleepData, setSleepData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { isMobile, isTablet, isDesktop } = useWindowSize();
 
-  useEffect(() => {
-    loadSleepData();
-  }, []);
+      // Use passed residentId or default
+  const activeResidentId = residentId || RESIDENT_ID;
 
-  const loadSleepData = async () => {
+      const loadSleepData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiService.getSleepData(RESIDENT_ID);
+      console.log('Loading sleep data for resident:', activeResidentId);
+      const data = await apiService.getSleepData(activeResidentId);
+      console.log('Sleep data loaded successfully:', data);
       setSleepData(data);
     } catch (err) {
-      setError(err);
       console.error('Failed to load sleep data:', err);
+      console.error('Resident ID that failed:', activeResidentId);
+      setError(err);
     } finally {
       setLoading(false);
     }
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadSleepData(); }, [activeResidentId]);
 
                           if (loading) {
     return (
@@ -98,10 +103,10 @@ export default function SleepDiaryPage() {
     );
   }
 
-  if (error || !sleepData) {
+    if (error || !sleepData) {
     return (
       <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 90, minHeight: "100vh" }}>
-        <ErrorMessage error={error} onRetry={loadSleepData} />
+        <ErrorMessage error={error} onRetry={loadSleepData} residentId={activeResidentId} />
       </main>
     );
   }
@@ -179,9 +184,48 @@ export default function SleepDiaryPage() {
       position: "relative",
       zIndex: 1,
       /* INCREASED - More space below navbar */
-      paddingTop: isMobile ? 80 : 120,
-      marginTop: 0,
+      paddingTop: isMobile ? 80 : (showBackButton ? 150 : 120),
+            marginTop: 0,
     }}>
+      
+      {/* Back to Resident Details Button */}
+      {showBackButton && onBackToResident && (
+        <button
+          onClick={onBackToResident}
+          style={{
+            position: "fixed",
+            top: 80,
+            left: 20,
+            zIndex: 1001,
+            background: "rgba(4,37,88,0.95)",
+            border: "2px solid #FFFFFF",
+            borderRadius: 12,
+            padding: "12px 20px",
+            color: "#ffffff",
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            transition: "all 0.2s",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(4,37,88,1)";
+            e.currentTarget.style.transform = "translateX(-4px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(4,37,88,0.95)";
+            e.currentTarget.style.transform = "translateX(0)";
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Resident Details
+        </button>
+      )}
 
       {/* ── Main Grid: 3 columns on desktop ── */}
       <div style={{

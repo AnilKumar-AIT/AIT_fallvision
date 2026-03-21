@@ -1,11 +1,13 @@
 import { useState }    from "react";
-import gaitIcon        from "../assets/gait.svg";
+import seniorsIcon     from "../assets/seniors.svg";
 import adlIcon         from "../assets/ADL.svg";
 import fallsIcon       from "../assets/falls.svg";
 import homeIcon        from "../assets/home.svg";
 import sleepDiaryIcon  from "../assets/sleep_diary.svg";
-import seniorsIcon     from "../assets/seniors.svg";
+import gaitIcon        from "../assets/gait.svg";
 import caregiversIcon  from "../assets/caregivers.svg";
+import notificationIcon from "../assets/notification.svg";
+import profileIcon     from "../assets/profile-circle.svg";
 import useWindowSize   from "../hooks/useWindowSize";
 
 /* ── Theme definitions per page ── */
@@ -55,7 +57,108 @@ const NAV_ITEMS = [
   { label: "Caregivers",  icon: caregiversIcon  },
 ];
 
-export default function Sidebar({ activePage, onNavigate }) {
+/* ──── Seniors Filter Button Component ──── */
+function SeniorsFilterButton({ label, value, options, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          background: value === "All" ? "rgba(255,255,255,0.08)" : "rgba(74,144,226,0.25)",
+          border: `1.5px solid ${value === "All" ? "rgba(255,255,255,0.25)" : "rgba(74,144,226,0.5)"}`,
+          borderRadius: 8,
+          padding: "8px 14px",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#ffffff",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span style={{ opacity: 0.7 }}>{label}:</span>
+        <span>{value}</span>
+        <svg 
+          width="12" 
+          height="12" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="#ffffff" 
+          strokeWidth="2.5"
+          style={{ 
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s"
+          }}
+        >
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            onClick={() => setIsOpen(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              background: "transparent",
+            }}
+          />
+          <div style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            zIndex: 1001,
+            background: "#0e2240",
+            border: "1.5px solid rgba(255,255,255,0.3)",
+            borderRadius: 8,
+            padding: "6px",
+            minWidth: 120,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          }}>
+            {options.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  background: value === option ? "rgba(74,144,226,0.3)" : "transparent",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 12px",
+                  fontSize: 13,
+                  fontWeight: value === option ? 700 : 400,
+                  color: "#ffffff",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  if (value !== option) e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  if (value !== option) e.currentTarget.style.background = "transparent";
+                }}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregiversFilters, isNavigationLocked }) {
   const { isMobile } = useWindowSize();
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = getTheme(activePage);
@@ -150,18 +253,26 @@ export default function Sidebar({ activePage, onNavigate }) {
     }}>
             {/* ── Pill 1: Nav icons ── */}
       <nav style={{ ...pillStyle, gap: 6, padding: "0 10px", pointerEvents: "auto" }}>
-        {NAV_ITEMS.map(({ label, icon }) => {
+                {NAV_ITEMS.map(({ label, icon }) => {
           const active = label === activePage;
+          const isLocked = isNavigationLocked && label !== "Seniors";
+          
           return (
             <div
               key={label}
-              onClick={() => onNavigate(label)}
+              onClick={() => {
+                if (!isLocked) {
+                  onNavigate(label);
+                }
+              }}
               title={label}
               style={{
                 position: "relative",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 width: 46, height: "100%",
-                cursor: "pointer",
+                cursor: isLocked ? "not-allowed" : "pointer",
+                opacity: isLocked ? 0.3 : 1,
+                pointerEvents: isLocked ? "none" : "auto",
               }}
             >
               {active && (
@@ -188,35 +299,56 @@ export default function Sidebar({ activePage, onNavigate }) {
       {/* Space between Pill 1 and Pills 2+3 */}
       <div style={{ flex: 1 }} />
 
-            {/* ── Pill 2: Insights and Alerts ── */}
-      <div style={{ ...pillStyle, gap: 10, padding: "0 20px", cursor: "pointer", pointerEvents: "auto" }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4l2 2"/>
-        </svg>
-        <span style={{ fontSize: 14, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>Insights and Alerts</span>
-      </div>
+                  {/* ── Pill 2: Seniors Filters OR Insights and Alerts ── */}
+      {activePage === "Seniors" && seniorsFilters ? (
+        <div style={{ ...pillStyle, gap: 10, padding: "0 16px", pointerEvents: "auto" }}>
+          {/* Age Group Filter */}
+          <SeniorsFilterButton
+            label="Age group"
+            value={seniorsFilters.selectedAgeGroup}
+            options={["All", "60-70", "71-80", "81+"]}
+            onChange={seniorsFilters.setSelectedAgeGroup}
+          />
 
-            {/* ── Pill 3: Bell + User ── */}
+          {/* Sleep Quality Filter */}
+          <SeniorsFilterButton
+            label="Sleep quality"
+            value={seniorsFilters.selectedSleepQuality}
+            options={["All", "GOOD", "AVERAGE", "POOR"]}
+            onChange={seniorsFilters.setSelectedSleepQuality}
+          />
+
+          {/* Risk Level Filter */}
+          <SeniorsFilterButton
+            label="Risk level"
+            value={seniorsFilters.selectedRiskLevel}
+            options={["All", "LOW", "MODERATE", "HIGH"]}
+            onChange={seniorsFilters.setSelectedRiskLevel}
+          />
+        </div>
+      ) : (
+        <div style={{ ...pillStyle, gap: 10, padding: "0 20px", cursor: "pointer", pointerEvents: "auto" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4l2 2"/>
+          </svg>
+          <span style={{ fontSize: 14, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>Insights and Alerts</span>
+        </div>
+      )}
+
+                        {/* ── Pill 3: Bell + User ── */}
       <div style={{ ...pillStyle, gap: 6, padding: "0 14px", pointerEvents: "auto" }}>
         <div style={{
           width: 38, height: 38, borderRadius: 8,
           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
         }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 01-3.46 0"/>
-          </svg>
+          <img src={notificationIcon} alt="Notifications" style={{ width: 22, height: 22 }} />
         </div>
         <div style={{
           width: 38, height: 38, borderRadius: 8,
           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
         }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="9" r="3"/>
-            <path d="M6.2 19.4a6 6 0 0111.6 0"/>
-          </svg>
+          <img src={profileIcon} alt="Profile" style={{ width: 24, height: 24 }} />
         </div>
       </div>
     </header>

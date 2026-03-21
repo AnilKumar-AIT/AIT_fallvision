@@ -4,6 +4,10 @@ import ForgotPasswordPage  from "./ForgotPasswordPage";
 import Sidebar             from "../components/Sidebar";
 import SleepDiaryPage      from "./SleepDiaryPage";
 import GaitPage            from "./GaitPage";
+import SeniorsPage         from "./SeniorsPage";
+import ResidentDetailsPage from "./ResidentDetailsPage";
+import CaregiversPage      from "./CaregiversPage";
+import CaregiverDetailsPage from "./CaregiverDetailsPage";
 
 /*
  * ─── ADD NEW PAGES HERE ──────────────────────────────────────────────────
@@ -15,17 +19,19 @@ import GaitPage            from "./GaitPage";
 const PAGE_MAP = {
   "Sleep Diary": <SleepDiaryPage />,
   "Gait":        <GaitPage />,
+  "Seniors":     <SeniorsPage />,
+  "Caregivers":  <CaregiversPage />,
   // "Home":        <HomePage />,
   // "Falls":       <FallsPage />,
   // "ADLs":        <ADLsPage />,
-  // "Seniors":     <SeniorsPage />,
-  // "Caregivers":  <CaregiversPage />,
 };
 
 /* ── Background per page ── */
 const PAGE_BG = {
   "Sleep Diary": "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
   "Gait":        "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
+  "Seniors":     "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
+  "Caregivers":  "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
 };
 
 const ComingSoon = ({ name }) => (
@@ -56,6 +62,12 @@ export default function Dashboard() {
   const [user, setUser]             = useState(null);
   const [authScreen, setAuthScreen] = useState("login"); // "login" | "forgot"
   const [activePage, setActivePage] = useState("Sleep Diary");
+  const [seniorsFilters, setSeniorsFilters] = useState(null);
+  const [caregiversFilters, setCaregiversFilters] = useState(null);
+  const [selectedResident, setSelectedResident] = useState(null);
+    const [selectedCaregiver, setSelectedCaregiver] = useState(null);
+  const [residentPageContext, setResidentPageContext] = useState(null); // Tracks which resident's page to show
+  const [isInResidentContext, setIsInResidentContext] = useState(false); // Lock navigation when viewing resident-specific pages
 
   /* ── Not logged in → show auth screens ── */
   if (!user) {
@@ -70,13 +82,128 @@ export default function Dashboard() {
     );
   }
 
-  /* ── Logged in → show Dashboard ── */
-  const CurrentPage = PAGE_MAP[activePage] ?? <ComingSoon name={activePage} />;
+            /* ── Logged in → show Dashboard ── */
+  // If a caregiver is selected, show the caregiver details page
+  if (selectedCaregiver) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: PAGE_BG[activePage] || "#060c16",
+        fontFamily: "'Segoe UI', sans-serif",
+        color: "#ffffff",
+        overflow: "hidden",
+        transition: "background 0.3s ease, color 0.3s ease",
+        position: "relative",
+      }}>
+        <Sidebar 
+          activePage={activePage} 
+          onNavigate={setActivePage}
+          seniorsFilters={activePage === "Seniors" ? seniorsFilters : null}
+          caregiversFilters={activePage === "Caregivers" ? caregiversFilters : null}
+        />
+                <CaregiverDetailsPage 
+          caregiverId={selectedCaregiver} 
+          onBack={() => setSelectedCaregiver(null)}
+          onNavigateToScreen={(screen, data) => {
+            // Handle navigation from caregiver details
+            if (screen === 'resident-details') {
+              // Navigate to resident details page
+              setSelectedCaregiver(null);
+              setSelectedResident(data); // data is the resident ID
+            } else {
+              setSelectedCaregiver(null);
+              setActivePage(screen);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+  
+  // If a resident is selected, show the details page
+  if (selectedResident) {
+    return (
+            <div style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: PAGE_BG[activePage] || "#060c16",
+        fontFamily: "'Segoe UI', sans-serif",
+        color: "#ffffff",
+        overflow: "hidden",
+        transition: "background 0.3s ease, color 0.3s ease",
+        position: "relative",
+      }}>
+        <Sidebar 
+          activePage={activePage} 
+          onNavigate={setActivePage}
+          seniorsFilters={activePage === "Seniors" ? seniorsFilters : null}
+          caregiversFilters={activePage === "Caregivers" ? caregiversFilters : null}
+        />
+                                <ResidentDetailsPage 
+          residentId={selectedResident} 
+          onBack={() => {
+            setSelectedResident(null);
+            setIsInResidentContext(false);
+            setResidentPageContext(null);
+          }}
+          onNavigateToScreen={(screen, residentId) => {
+            // When clicking arrow on resident details, navigate with context lock
+            setSelectedResident(null);
+            setActivePage(screen);
+            setResidentPageContext(residentId);
+            setIsInResidentContext(true); // Lock navigation
+          }}
+        />
+      </div>
+    );
+  }
+  
+                        // Render current page based on activePage
+  let CurrentPage;
+  
+  // Function to go back to resident details from context pages
+  const handleBackToResidentDetails = () => {
+    const resId = residentPageContext;
+    setResidentPageContext(null);
+    setIsInResidentContext(false);
+    setSelectedResident(resId); // Show the resident details page again
+  };
+  
+    if (activePage === "Sleep Diary") {
+    CurrentPage = <SleepDiaryPage 
+      residentId={residentPageContext} 
+      showBackButton={isInResidentContext}
+      onBackToResident={handleBackToResidentDetails}
+    />;
+  } else if (activePage === "Gait") {
+    CurrentPage = <GaitPage 
+      residentId={residentPageContext}
+      showBackButton={isInResidentContext}
+      onBackToResident={handleBackToResidentDetails}
+    />;
+            } else if (activePage === "Seniors") {
+        CurrentPage = <SeniorsPage 
+      onFiltersChange={setSeniorsFilters} 
+      onResidentClick={(residentId) => setSelectedResident(residentId)}
+    />;
+  } else if (activePage === "Caregivers") {
+    CurrentPage = <CaregiversPage 
+      onFiltersChange={setCaregiversFilters} 
+      onCaregiverClick={(caregiverId) => setSelectedCaregiver(caregiverId)}
+    />;
+  } else if (PAGE_MAP[activePage]) {
+    CurrentPage = PAGE_MAP[activePage];
+  } else {
+    CurrentPage = <ComingSoon name={activePage} />;
+  }
     const bg = PAGE_BG[activePage] || "#060c16";
   const textColor = "#ffffff";
 
     return (
-    <div style={{
+        <div style={{
       display: "flex",
       flexDirection: "column",
       height: "100vh",
@@ -87,7 +214,25 @@ export default function Dashboard() {
       transition: "background 0.3s ease, color 0.3s ease",
       position: "relative",
     }}>
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+                  <Sidebar 
+        activePage={activePage} 
+                onNavigate={(page) => {
+          // Block navigation when in resident context mode (except Seniors)
+          if (isInResidentContext && page !== "Seniors") {
+            return; // Do nothing
+          }
+          // Clear resident context when navigating to Seniors
+          if (page === "Seniors" && (residentPageContext || isInResidentContext)) {
+            setResidentPageContext(null);
+            setIsInResidentContext(false);
+          }
+          setActivePage(page);
+        }}
+        seniorsFilters={activePage === "Seniors" ? seniorsFilters : null}
+        caregiversFilters={activePage === "Caregivers" ? caregiversFilters : null}
+        isNavigationLocked={isInResidentContext}
+      />
+      
       {CurrentPage}
     </div>
   );

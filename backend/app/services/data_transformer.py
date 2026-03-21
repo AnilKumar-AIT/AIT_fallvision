@@ -98,9 +98,17 @@ class DataTransformer:
         resident_info: Dict,
         gait_snapshot: Dict,
         daily_steps: List[Dict],
-        stride_hourly: List[Dict]
+        stride_hourly: List[Dict],
+        alerts: List[Dict] = None,
+        suggestions: List[Dict] = None,
+        health_score: Dict = None
     ) -> Dict:
         """Transform DynamoDB gait data to match React gaitData.json format"""
+        
+        # Default empty lists if not provided
+        alerts = alerts or []
+        suggestions = suggestions or []
+        health_score = health_score or {}
         
         return {
             "patient": {
@@ -154,9 +162,47 @@ class DataTransformer:
                 "rightLabel": "Right Tilt"
             },
             "insights": {
-                "recentAlerts": "Low step frequency detected on [20 Feb]",
-                "recommendations": "Increase walking pace to improve step frequency",
-                "fallRiskSummary": f"Fall risk elevated due to {gait_snapshot.get('fall_risk_level', 'moderate')} body tilt"
+                "recentAlerts": DataTransformer._format_alerts(alerts),
+                "recommendations": DataTransformer._format_suggestions(suggestions),
+                "fallRiskSummary": DataTransformer._format_fall_risk(health_score, gait_snapshot)
+            },
+            "alerts": [
+                {
+                    "id": alert.get('alert_id', ''),
+                    "timestamp": alert.get('alert_ts', ''),
+                    "type": alert.get('alert_type', ''),
+                    "severity": alert.get('severity', ''),
+                    "message": alert.get('message', ''),
+                    "acknowledged": alert.get('acknowledged', False),
+                    "domain": alert.get('domain', 'GAIT')
+                }
+                for alert in alerts
+            ],
+            "suggestions": [
+                {
+                    "id": suggestion.get('suggestion_id', ''),
+                    "timestamp": suggestion.get('suggestion_ts', ''),
+                    "text": suggestion.get('suggestion_text', ''),
+                    "category": suggestion.get('suggestion_category', ''),
+                    "priority": suggestion.get('priority', ''),
+                    "status": suggestion.get('status', 'ACTIVE'),
+                    "confidence": float(suggestion.get('confidence', 0)),
+                    "targetDomain": suggestion.get('target_domain', ''),
+                    "validUntil": suggestion.get('valid_until', '')
+                }
+                for suggestion in suggestions
+            ],
+            "healthScore": {
+                "overall": health_score.get('overall_score', 0),
+                "overallLabel": health_score.get('overall_label', 'N/A'),
+                "fallRiskScore": health_score.get('fall_risk_score', 0),
+                "gaitStabilityScore": health_score.get('gait_stability_score', 0),
+                "activityLevelScore": health_score.get('activity_level_score', 0),
+                "riskLevel": health_score.get('risk_level', 'MODERATE'),
+                "primaryRiskFactor": health_score.get('primary_risk_factor', ''),
+                "riskTrend7d": health_score.get('risk_trend_7d', 'STABLE'),
+                "fallCard": health_score.get('fall_card', {}),
+                "gaitCard": health_score.get('gait_card', {})
             }
         }
     
@@ -234,5 +280,74 @@ class DataTransformer:
                 return f"{hour-12}PM"
         except:
             return ''
+    
+    @staticmethod
+    def _format_alerts(alerts: List[Dict]) -> str:
+        """Format recent alerts into a summary string"""
+        if not alerts:
+            return "No recent alerts"
+        
+        # Get the most recent critical/warning alert
+        gait_alerts = [a for a in alerts if a.get('domain') == 'GAIT']
+        if not gait_alerts:
+            return "No recent gait alerts"
+        
+        latest = gait_alerts[0]
+        alert_type = latest.get('alert_type', '').replace('_', ' ').title()
+        timestamp = latest.get('alert_ts', '')
+        
+        try:
+            from datetime import datetime
+            dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            date_str = dt.strftime('%d %b')
+            return f"{alert_type} detected on [{date_str}]"
+        except:
+            return f"{alert_type} detected recently"
+    
+    @staticmethod
+    def _format_suggestions(suggestions: List[Dict]) -> str:
+        """Format top suggestion into a string"""
+        if not suggestions:
+            return "No recommendations available"
+        
+        # Filter for gait/activity suggestions (more lenient - check if status exists and is ACTIVE)
+        gait_suggestions = [
+            s for s in suggestions 
+            if s.get('target_domain') in ['GAIT', 'ACTIVITY', 'FALL', 'CROSS_DOMAIN']
+            and (not s.get('status') or s.get('status') == 'ACTIVE')  # Include if no status or ACTIVE
+        ]
+        
+        # If no gait-specific suggestions, use any available suggestion
+        if not gait_suggestions:
+            gait_suggestions = suggestions
+        
+        if not gait_suggestions:
+            return "No active recommendations"
+        
+        # Sort by priority (HIGH > MEDIUM > LOW)
+        priority_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
+        gait_suggestions.sort(key=lambda x: priority_order.get(x.get('priority', 'LOW'), 3))
+        
+        suggestion_text = gait_suggestions[0].get('suggestion_text', '')
+        return suggestion_text if suggestion_text else "No recommendations available"
+    
+    @staticmethod
+    def _format_fall_risk(health_score: Dict, gait_snapshot: Dict) -> str:
+        """Format fall risk summary"""
+        if not health_score:
+            risk_level = gait_snapshot.get('fall_risk_level', 'MODERATE')
+            return f"Fall risk is {risk_level.lower()}"
+        
+        risk_level = health_score.get('risk_level', 'MODERATE')
+        primary_factor = health_score.get('primary_risk_factor', 'gait instability')
+        trend = health_score.get('risk_trend_7d', 'STABLE')
+        
+        trend_text = {
+            'WORSENING': 'and worsening',
+            'IMPROVING': 'but improving',
+            'STABLE': 'and stable'
+        }.get(trend, '')
+        
+        return f"Fall risk is {risk_level.lower()} due to {primary_factor} {trend_text}"
 
 transformer = DataTransformer()

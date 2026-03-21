@@ -1,7 +1,9 @@
 /**
  * Error Display Component
  */
-export default function ErrorMessage({ error, onRetry }) {
+export default function ErrorMessage({ error, onRetry, residentId }) {
+  const errorDetails = error?.response?.data?.detail || error?.message || "Unknown error occurred";
+  
   return (
     <div style={{
       display: "flex",
@@ -23,9 +25,14 @@ export default function ErrorMessage({ error, onRetry }) {
         <h2 style={{ color: "#ff4444", marginBottom: 10, fontSize: 24 }}>
           Error Loading Data
         </h2>
-        <p style={{ color: "#ffffff", opacity: 0.7, fontSize: 14, maxWidth: 500 }}>
-          {error?.message || "Unable to fetch data from the server. Please try again."}
+        <p style={{ color: "#ffffff", opacity: 0.7, fontSize: 14, maxWidth: 500, marginBottom: 10 }}>
+          {errorDetails}
         </p>
+        {residentId && (
+          <p style={{ color: "#ffffff", opacity: 0.5, fontSize: 12 }}>
+            Resident ID: {residentId}
+          </p>
+        )}
       </div>
       
       {onRetry && (

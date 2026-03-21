@@ -84,29 +84,34 @@ const StepLollipop = ({ x, y, width, height, payload }) => {
 };
 
 /* ═══════════════════════ PAGE ═══════════════════════ */
-export default function GaitPage() {
+export default function GaitPage({ residentId, showBackButton, onBackToResident }) {
   const [gaitData, setGaitData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { isMobile, isTablet, isDesktop } = useWindowSize();
 
-  useEffect(() => {
-    loadGaitData();
-  }, []);
+  // Use passed residentId or default
+  const activeResidentId = residentId || RESIDENT_ID;
 
   const loadGaitData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiService.getGaitData(RESIDENT_ID);
+      console.log('Loading gait data for resident:', activeResidentId);
+      const data = await apiService.getGaitData(activeResidentId);
+      console.log('Gait data loaded successfully:', data);
       setGaitData(data);
     } catch (err) {
-      setError(err);
       console.error('Failed to load gait data:', err);
+      console.error('Resident ID that failed:', activeResidentId);
+      setError(err);
     } finally {
       setLoading(false);
     }
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadGaitData(); }, [activeResidentId]);
 
   if (loading) {
     return (
@@ -119,7 +124,7 @@ export default function GaitPage() {
   if (error || !gaitData) {
     return (
       <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
-        <ErrorMessage error={error} onRetry={loadGaitData} />
+        <ErrorMessage error={error} onRetry={loadGaitData} residentId={activeResidentId} />
       </main>
     );
   }
@@ -186,13 +191,52 @@ export default function GaitPage() {
       color: W,
       position: "relative",
       zIndex: 1,
-      paddingTop: isMobile ? 80 : 90,
+      paddingTop: isMobile ? 80 : (showBackButton ? 150 : 140),
       paddingBottom: isMobile ? 10 : 6,
       marginTop: 0,
       height: threeCol ? "100vh" : "auto",
       minHeight: threeCol ? 0 : "100vh",
       boxSizing: "border-box",
     }}>
+
+      {/* Back to Resident Details Button */}
+      {showBackButton && onBackToResident && (
+        <button
+          onClick={onBackToResident}
+          style={{
+            position: "fixed",
+            top: 80,
+            left: 20,
+            zIndex: 1001,
+            background: "rgba(4,37,88,0.95)",
+            border: "2px solid #FFFFFF",
+            borderRadius: 12,
+            padding: "12px 20px",
+            color: W,
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            transition: "all 0.2s",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(4,37,88,1)";
+            e.currentTarget.style.transform = "translateX(-4px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(4,37,88,0.95)";
+            e.currentTarget.style.transform = "translateX(0)";
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2.5" strokeLinecap="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Resident Details
+        </button>
+      )}
 
       {/* ── Full-height grid: metric card spans all rows ── */}
       <div style={{

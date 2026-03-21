@@ -6,10 +6,11 @@ import os
 class Settings:
     # AWS Configuration
     AWS_REGION = "us-east-1"
-    FACILITY_ID = "FAC#f-001"
+    FACILITY_ID = "FAC#f-001"  # Primary facility ID
     
     # DynamoDB Table Names
     TABLE_RESIDENTS = "residents"
+    TABLE_EMERGENCY_CONTACTS = "resident_emergency_contacts"
     TABLE_SLEEP_SUMMARY = "sleep_nightly_summary"
     TABLE_SLEEP_MOVEMENT = "sleep_movement_hourly"
     TABLE_SLEEP_WAKE = "sleep_wake_episodes"

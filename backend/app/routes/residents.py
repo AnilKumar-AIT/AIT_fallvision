@@ -68,3 +68,13 @@ async def get_health_score(resident_id: str) -> Dict:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{resident_id}/emergency-contacts")
+async def get_emergency_contacts(resident_id: str) -> Dict:
+    """Get emergency contacts for a resident"""
+    try:
+        contacts = db_service.get_emergency_contacts(resident_id)
+        return {"resident_id": resident_id, "contacts": contacts, "count": len(contacts)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
