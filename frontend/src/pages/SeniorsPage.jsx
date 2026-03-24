@@ -111,7 +111,7 @@ export function FilterButton({ label, value, options, onChange, isMobile }) {
 }
 
 /* ═══════════════════════ PAGE ═══════════════════════ */
-export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
+export default function SeniorsPage({ onFiltersChange, onResidentClick, onAddSenior, onEditResident }) {
   const [residents, setResidents] = useState([]);
   const [filteredResidents, setFilteredResidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -245,13 +245,17 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
     filterResidents();
   }, [filterResidents]);
 
-  const handleDeleteResident = (residentId) => {
-    // TODO: Implement delete functionality
-    console.log("Delete resident:", residentId);
-    if (window.confirm("Are you sure you want to remove this resident?")) {
-      // API call to delete resident
-      // For now, just remove from local state
+  const handleDeleteResident = async (residentId) => {
+    if (!window.confirm("Are you sure you want to remove this resident? This will also delete their photo and emergency contacts.")) {
+      return;
+    }
+    try {
+      await apiService.deleteResident(residentId);
+      // Remove from local state so the list updates instantly
       setResidents(residents.filter(r => r.resident_id !== residentId));
+    } catch (err) {
+      console.error('Failed to delete resident:', err);
+      alert('Failed to delete resident. Please try again.');
     }
   };
 
@@ -301,8 +305,8 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
   return (
     <main style={{
       flex: 1,
-      padding: isMobile ? "10px 10px" : "12px 16px",
-      overflowY: "auto",
+      padding: isMobile ? "10px 10px" : "12px 60px",
+      overflowY: "hidden",
       display: "flex",
       flexDirection: "column",
       gap,
@@ -314,7 +318,7 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
       paddingTop: isMobile ? 80 : 150,
       paddingBottom: isMobile ? 10 : 6,
       marginTop: 0,
-      minHeight: "100vh",
+      height: "100vh",
       boxSizing: "border-box",
     }}>
       
@@ -415,13 +419,17 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
         </div>
 
         {/* Add Senior Label (text only) */}
-        <span style={{
-          fontSize: 16,
-          fontWeight: 500,
-          color: W,
-          whiteSpace: "nowrap",
-          flexShrink: 0,
-        }}>
+        <span 
+          onClick={() => onAddSenior && onAddSenior()}
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            color: W,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            cursor: "pointer",
+          }}
+        >
           Add Senior
         </span>
 
@@ -439,7 +447,9 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
             background: "#6ADD00",
             borderRadius: "50%",
           }} />
-          <button style={{
+          <button 
+          onClick={() => onAddSenior && onAddSenior()}
+          style={{
             position: "absolute",
             left: 9,
             top: 9,
@@ -477,13 +487,19 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
         display: "flex",
         flexDirection: "column",
         gap: 20,
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
       }}>
         {/* Residents Grid */}
         <div style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: isMobile ? 16 : 20,
-          minHeight: "400px",
+          overflowY: "auto",
+          flex: 1,
+          minHeight: 0,
+          paddingRight: 8,
         }}>
           {currentRecords.length === 0 ? (
             <div style={{
@@ -511,6 +527,7 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
                 key={resident.resident_id}
                 resident={resident}
                 onDelete={handleDeleteResident}
+                onEdit={onEditResident}
                 onClick={() => onResidentClick && onResidentClick(resident.resident_id)}
                 isMobile={isMobile}
               />
@@ -686,7 +703,7 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick }) {
 }
 
 /* ═══════════════════════ RESIDENT CARD COMPONENT ═══════════════════════ */
-function ResidentCard({ resident, onDelete, onClick, isMobile }) {
+function ResidentCard({ resident, onDelete, onEdit, onClick, isMobile }) {
   return (
     <div 
       onClick={onClick}
@@ -747,6 +764,38 @@ function ResidentCard({ resident, onDelete, onClick, isMobile }) {
           {resident.name || "Unknown Resident"}
         </p>
       </div>
+
+      {/* Edit Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit && onEdit(resident);
+        }}
+        style={{
+          background: "transparent",
+          border: "none",
+          width: 18,
+          height: 18,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          flexShrink: 0,
+          transition: "opacity 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "0.7";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "1";
+        }}
+        title="Edit resident"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
 
       {/* Delete Button */}
       <button

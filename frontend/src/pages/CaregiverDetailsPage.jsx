@@ -152,10 +152,10 @@ export default function CaregiverDetailsPage({ caregiverId, onBack, onNavigateTo
   const cardPadding = isMobile ? "16px 18px" : "20px 24px";
 
   return (
-    <main style={{
-      flex: 1,
-      padding: isMobile ? "12px" : "16px 20px",
-      overflowY: "auto",
+          <main style={{
+        flex: 1,
+        padding: isMobile ? "12px" : "16px 60px",
+        overflowY: "auto",
       display: "flex",
       flexDirection: "column",
       gap,

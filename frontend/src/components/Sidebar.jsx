@@ -241,14 +241,14 @@ export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregi
     height: pillH, flexShrink: 0,
   };
 
-    return (
+                    return (
     <header style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
       height: 68, flexShrink: 0,
       background: "transparent",
       display: "flex", alignItems: "flex-end",
-      padding: "0 20px 6px",
-      gap: 14,
+      padding: "0 60px 6px 60px",
+      gap: 10,
       pointerEvents: "none", // Allow clicks to pass through empty areas
     }}>
             {/* ── Pill 1: Nav icons ── */}
@@ -299,7 +299,7 @@ export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregi
       {/* Space between Pill 1 and Pills 2+3 */}
       <div style={{ flex: 1 }} />
 
-                  {/* ── Pill 2: Seniors Filters OR Insights and Alerts ── */}
+                                    {/* ── Pill 2: Seniors Filters OR Caregivers Filters OR Insights and Alerts ── */}
       {activePage === "Seniors" && seniorsFilters ? (
         <div style={{ ...pillStyle, gap: 10, padding: "0 16px", pointerEvents: "auto" }}>
           {/* Age Group Filter */}
@@ -326,13 +326,53 @@ export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregi
             onChange={seniorsFilters.setSelectedRiskLevel}
           />
         </div>
+      ) : activePage === "Caregivers" && caregiversFilters ? (
+        <div style={{ ...pillStyle, gap: 10, padding: "0 16px", pointerEvents: "auto" }}>
+          {/* Role Filter */}
+          <SeniorsFilterButton
+            label="Role"
+            value={caregiversFilters.selectedRole}
+            options={["All", "RN", "LPN", "CNA", "PT", "NP", "ADMIN"]}
+            onChange={caregiversFilters.setSelectedRole}
+          />
+
+          {/* Shift Filter */}
+          <SeniorsFilterButton
+            label="Shift"
+            value={caregiversFilters.selectedShift}
+            options={["All", "DAY", "EVENING", "NIGHT"]}
+            onChange={caregiversFilters.setSelectedShift}
+          />
+
+          {/* Status Filter */}
+          <SeniorsFilterButton
+            label="Status"
+            value={caregiversFilters.selectedStatus}
+            options={["All", "ACTIVE", "INACTIVE", "ON_LEAVE"]}
+            onChange={caregiversFilters.setSelectedStatus}
+          />
+        </div>
+                        ) : activePage === "ADLs" ? (
+        // Date display - ONLY for ADLs page
+        <div style={{ ...pillStyle, gap: 8, padding: "0 20px", pointerEvents: "auto" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span style={{ fontSize: 13, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
       ) : (
+        // Insights and Alerts - for all other pages
         <div style={{ ...pillStyle, gap: 10, padding: "0 20px", cursor: "pointer", pointerEvents: "auto" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round">
             <circle cx="12" cy="12" r="10"/>
             <path d="M12 8v4l2 2"/>
           </svg>
-          <span style={{ fontSize: 14, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>Insights and Alerts</span>
+                    <span style={{ fontSize: 14, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>Insights and Alerts</span>
         </div>
       )}
 

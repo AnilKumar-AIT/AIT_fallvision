@@ -4,6 +4,8 @@
  */
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
+const S3_BUCKET = 'aitcare-dashboard-photos-dev';
+const S3_REGION = 'us-east-1';
 
 class ApiService {
   /**
@@ -47,6 +49,13 @@ class ApiService {
   }
 
   /**
+   * ADLs (Activities of Daily Living) API
+   */
+  async getADLSData(residentId) {
+    return this.fetchData(`/adls/${encodeURIComponent(residentId)}`);
+  }
+
+  /**
    * RESIDENTS API
    */
   async getAllResidents() {
@@ -70,6 +79,84 @@ class ApiService {
   }
 
   /**
+   * DELETE RESIDENT (also deletes photo from S3 on backend)
+   */
+  async deleteResident(residentId) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/residents/${encodeURIComponent(residentId)}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorBody}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('API Error [DELETE /residents]:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * CREATE RESIDENT (multipart form with optional photo)
+   */
+  async createResident(residentData, photoFile = null) {
+    try {
+      const formData = new FormData();
+      formData.append('resident_data', JSON.stringify(residentData));
+      
+      if (photoFile) {
+        formData.append('photo', photoFile);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/residents`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - browser will set it with boundary for multipart
+      });
+      
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorBody}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API Error [POST /residents]:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * UPDATE RESIDENT
+   */
+  async updateResident(residentId, residentData) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/residents/${encodeURIComponent(residentId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(residentData),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorBody}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API Error [PUT /residents]:', error);
+      throw error;
+    }
+  }
+
+  /**
    * RESIDENT DETAILS API
    */
   async getResidentDetails(residentId) {
@@ -86,13 +173,10 @@ class ApiService {
       }
     }
     
-    // Construct S3 photo URL if photo_s3_key exists
+    // Construct S3 photo URL if photo_s3_key exists and is not empty
     let profilePhoto = null;
-    if (data.photo_s3_key) {
-      // Main dashboard photos bucket
-      const bucketName = 'aitcare-dashboard-photos-dev';
-      const region = 'us-east-1';
-      profilePhoto = `https://${bucketName}.s3.${region}.amazonaws.com/${data.photo_s3_key}`;
+    if (data.photo_s3_key && data.photo_s3_key.length > 0) {
+      profilePhoto = `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${data.photo_s3_key}`;
     }
     
     // Add the extracted name and photo URL to the data
@@ -105,38 +189,59 @@ class ApiService {
   }
 
   async getEmergencyContacts(residentId) {
-    // Mock data for now - will be replaced with real API endpoint
-    return [
-      {
-        contact_name: "John Doe",
-        contact_priority: "PRIMARY",
-        relationship: "Son",
-        phone: "(555) 123-4567",
-        email: "john.doe@email.com",
-        notify_on_fall: true,
-        is_legal_guardian: true
-      },
-      {
-        contact_name: "Jane Smith",
-        contact_priority: "SECONDARY",
-        relationship: "Daughter",
-        phone: "(555) 987-6543",
-        email: "jane.smith@email.com",
-        notify_on_fall: true,
-        is_legal_guardian: false
-      }
-    ];
+    try {
+      const data = await this.fetchData(`/residents/${encodeURIComponent(residentId)}/emergency-contacts`);
+      return data.contacts || [];
+    } catch (error) {
+      console.error('Error fetching emergency contacts:', error);
+      return [];
+    }
+  }
+
+  async getResidentCaregivers(residentId, days = 7) {
+    return this.fetchData(`/residents/${encodeURIComponent(residentId)}/caregivers?days=${days}`);
   }
 
   async getResidentHighlights(residentId) {
-    // Mock data for now - will be replaced with real API endpoint
-    return {
-      last_sleep_hours: 7.5,
-      last_sleep_date: "2025-03-13",
-      recent_falls_count: 2,
-      gait_score: 72,
-      adl_completion: 85
+    // Pull real data from health-score, sleep summary, and gait snapshot
+    const highlights = {
+      last_sleep_hours: null,
+      last_sleep_date: null,
+      recent_falls_count: null,
+      gait_score: null,
+      adl_completion: null
     };
+
+    try {
+      const healthScore = await this.getHealthScore(residentId);
+      if (healthScore) {
+        highlights.gait_score = healthScore.gait_stability_score || null;
+        highlights.recent_falls_count = healthScore.fall_card?.line1 ? 
+          parseInt(healthScore.fall_card.line1) || 0 : 0;
+        highlights.adl_completion = healthScore.activity_level_score || null;
+        
+        if (healthScore.sleep_card?.line1) {
+          const sleepHrs = parseFloat(healthScore.sleep_card.line1);
+          if (!isNaN(sleepHrs)) highlights.last_sleep_hours = sleepHrs;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load health score for highlights:', e);
+    }
+
+    try {
+      const sleepData = await this.fetchData(`/sleep/${encodeURIComponent(residentId)}/summary?days=1`);
+      if (sleepData && sleepData.length > 0) {
+        const latest = sleepData[0];
+        const tst = latest.total_sleep_time_min;
+        if (tst) highlights.last_sleep_hours = Math.round((tst / 60) * 10) / 10;
+        if (latest.sleep_date) highlights.last_sleep_date = latest.sleep_date;
+      }
+    } catch (e) {
+      console.warn('Could not load sleep summary for highlights:', e);
+    }
+
+    return highlights;
   }
 
   /**
@@ -206,6 +311,64 @@ class ApiService {
   }
 
   /**
+   * CREATE CAREGIVER (multipart form with optional photo)
+   */
+  async createCaregiver(caregiverData, photoFile = null) {
+    try {
+      const formData = new FormData();
+      formData.append('caregiver_data', JSON.stringify(caregiverData));
+      
+      if (photoFile) {
+        formData.append('photo', photoFile);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/caregivers`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - browser will set it with boundary for multipart
+      });
+      
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorBody}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API Error [POST /caregivers]:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * UPDATE CAREGIVER
+   */
+  async updateCaregiver(caregiverId, caregiverData) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/caregivers/${encodeURIComponent(caregiverId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(caregiverData),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorBody}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API Error [PUT /caregivers]:', error);
+      throw error;
+    }
+  }
+
+  /**
    * CAREGIVER DETAILS (processed)
    */
   async getCaregiverDetails(caregiverId) {
@@ -217,10 +380,7 @@ class ApiService {
     // Construct profile photo URL if available
     let profilePhoto = null;
     if (data.photo_s3_key) {
-      // Main dashboard photos bucket
-      const bucketName = 'aitcare-dashboard-photos-dev';
-      const region = 'us-east-1';
-      profilePhoto = `https://${bucketName}.s3.${region}.amazonaws.com/${data.photo_s3_key}`;
+      profilePhoto = `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${data.photo_s3_key}`;
     }
     
     return {

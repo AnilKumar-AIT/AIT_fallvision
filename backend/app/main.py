@@ -5,7 +5,7 @@ Main application entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routes import sleep, gait, residents, caregivers
+from .routes import sleep, gait, residents, caregivers, adls
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -26,6 +26,7 @@ app.add_middleware(
 # Include routers
 app.include_router(sleep.router, prefix=settings.API_V1_PREFIX)
 app.include_router(gait.router, prefix=settings.API_V1_PREFIX)
+app.include_router(adls.router, prefix=settings.API_V1_PREFIX)
 app.include_router(residents.router, prefix=settings.API_V1_PREFIX)
 app.include_router(caregivers.router, prefix=settings.API_V1_PREFIX)
 
@@ -39,6 +40,7 @@ async def root():
         "endpoints": {
             "sleep": "/api/v1/sleep/{resident_id}",
             "gait": "/api/v1/gait/{resident_id}",
+            "adls": "/api/v1/adls/{resident_id}",
             "residents": "/api/v1/residents",
             "caregivers": "/api/v1/caregivers"
         }

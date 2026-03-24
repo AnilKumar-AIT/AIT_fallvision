@@ -21,6 +21,9 @@ class Settings:
     TABLE_SUGGESTIONS = "resident_smart_suggestions"
     TABLE_HEALTH_SCORE = "resident_health_score"
     
+    # S3 Buckets
+    S3_PHOTOS_BUCKET = os.environ.get("S3_PHOTOS_BUCKET", "aitcare-dashboard-photos-dev")
+    
     # CORS
     CORS_ORIGINS = [
         "http://localhost:3000",

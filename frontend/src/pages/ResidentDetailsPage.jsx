@@ -13,6 +13,7 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
   
   const [resident, setResident] = useState(null);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [caregivers, setCaregivers] = useState([]);
   const [highlights, setHighlights] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,17 +27,36 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
       setLoading(true);
       setError(null);
       
-      // Fetch resident details
+      // Fetch resident details (this is the critical one)
       const residentData = await apiService.getResidentDetails(residentId);
       setResident(residentData);
       
-      // Fetch emergency contacts
-      const contacts = await apiService.getEmergencyContacts(residentId);
-      setEmergencyContacts(contacts || []);
+      // Fetch emergency contacts - don't let this fail the whole page
+      try {
+        const contacts = await apiService.getEmergencyContacts(residentId);
+        setEmergencyContacts(contacts || []);
+      } catch (contactErr) {
+        console.warn('Could not load emergency contacts:', contactErr);
+        setEmergencyContacts([]);
+      }
       
-      // Fetch highlights (recent activity data)
-      const highlightsData = await apiService.getResidentHighlights(residentId);
-      setHighlights(highlightsData || {});
+      // Fetch assigned caregivers - don't let this fail the whole page
+      try {
+        const caregiversData = await apiService.getResidentCaregivers(residentId, 7);
+        setCaregivers(caregiversData?.caregivers || []);
+      } catch (cgErr) {
+        console.warn('Could not load caregivers:', cgErr);
+        setCaregivers([]);
+      }
+      
+      // Fetch highlights - don't let this fail the whole page
+      try {
+        const highlightsData = await apiService.getResidentHighlights(residentId);
+        setHighlights(highlightsData || {});
+      } catch (highlightErr) {
+        console.warn('Could not load highlights:', highlightErr);
+        setHighlights({});
+      }
       
     } catch (err) {
       console.error('Failed to load resident details:', err);
@@ -84,7 +104,7 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
   return (
     <main style={{
       flex: 1,
-      padding: isMobile ? "12px" : "16px 20px",
+      padding: isMobile ? "12px" : "16px 60px",
       overflowY: "auto",
       display: "flex",
       flexDirection: "column",
@@ -186,6 +206,11 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
                   height: "100%",
                   objectFit: "cover",
                 }}
+                onError={(e) => {
+                  // If S3 image fails to load, hide it and show fallback
+                  e.target.style.display = 'none';
+                  e.target.parentNode.querySelector('svg') && (e.target.parentNode.querySelector('svg').style.display = 'block');
+                }}
               />
             ) : (
               <svg width={isMobile ? 80 : 100} height={isMobile ? 80 : 100} viewBox="0 0 24 24" fill="none" stroke="#042558" strokeWidth="1.5">
@@ -263,6 +288,45 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
         )}
       </div>
 
+      {/* ═══ ASSIGNED CAREGIVERS SECTION ═══ */}
+      <div style={{
+        background: "#042558",
+        border: "2px solid #FFFFFF",
+        borderRadius: 20,
+        padding: cardPadding,
+      }}>
+        <h2 style={{
+          margin: "0 0 16px 0",
+          fontSize: isMobile ? 20 : 24,
+          fontWeight: 700,
+          color: W,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+          Current Caregivers
+        </h2>
+        
+        {caregivers.length === 0 ? (
+          <p style={{ margin: 0, opacity: 0.6, fontSize: 14 }}>No caregivers currently assigned</p>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+          }}>
+            {caregivers.map((caregiver, idx) => (
+              <CaregiverAssignmentCard key={idx} caregiver={caregiver} isMobile={isMobile} />
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* ═══ HIGHLIGHTS SECTION ═══ */}
       <div style={{
         background: "#042558",
@@ -299,10 +363,10 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
           />
           <HighlightCard 
             title="Recent Falls"
-            value={highlights?.recent_falls_count || "0"}
+            value={highlights?.recent_falls_count != null ? String(highlights.recent_falls_count) : "N/A"}
             subtitle="Last 30 days"
             icon="fall"
-            onClick={() => alert('Falls History page coming soon!')}
+            onClick={null}
           />
           <HighlightCard 
             title="Gait Score"
@@ -316,7 +380,7 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
             value={highlights?.adl_completion ? `${highlights.adl_completion}%` : "N/A"}
             subtitle="Daily activities"
             icon="adl"
-            onClick={() => alert('ADLs page coming soon!')}
+            onClick={null}
           />
         </div>
       </div>
@@ -374,7 +438,7 @@ function EmergencyContactCard({ contact, isMobile }) {
           fontWeight: 700,
           color: W,
         }}>
-          {contact.contact_name || "Unknown"}
+          {contact.contact_name || contact.contact_name_enc || "Unknown"}
         </span>
         <span style={{
           fontSize: 11,
@@ -394,11 +458,11 @@ function EmergencyContactCard({ contact, isMobile }) {
           <strong>Relationship:</strong> {contact.relationship || "N/A"}
         </div>
         <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
-          <strong>Phone:</strong> {contact.phone || "N/A"}
+          <strong>Phone:</strong> {contact.phone || contact.phone_enc || "N/A"}
         </div>
-        {contact.email && (
+        {(contact.email || contact.email_enc) && (
           <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
-            <strong>Email:</strong> {contact.email}
+            <strong>Email:</strong> {contact.email || contact.email_enc}
           </div>
         )}
       </div>
@@ -650,6 +714,184 @@ function QuickAccessModule({ title, description, icon, onClick, bgColor, isMobil
         </svg>
       </div>
     </button>
+  );
+}
+
+/* ═══════════════════════ CAREGIVER ASSIGNMENT CARD ═══════════════════════ */
+function CaregiverAssignmentCard({ caregiver, isMobile }) {
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.1)",
+      border: "1.5px solid rgba(255,255,255,0.3)",
+      borderRadius: 12,
+      padding: isMobile ? "14px" : "16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+      transition: "all 0.2s",
+      cursor: "pointer",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = "rgba(255,255,255,0.15)";
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "none";
+    }}
+    >
+      {/* Header with Name and Status */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 8,
+      }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flex: 1,
+          minWidth: 0,
+        }}>
+          {/* Profile Icon */}
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: "#D9D9D9",
+            border: "2px solid #FFFFFF",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#042558" strokeWidth="2">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+            </svg>
+          </div>
+          
+          {/* Name */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: W,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
+              {caregiver.display_name?.split(",")[0] || caregiver.first_name + " " + caregiver.last_name || "Unknown"}
+            </div>
+            <div style={{
+              fontSize: 12,
+              color: "rgba(255,255,255,0.7)",
+              marginTop: 2,
+            }}>
+              {caregiver.badge_id || "N/A"}
+            </div>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <span style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: W,
+          background: caregiver.status === "ACTIVE" ? "#6ADD00" : "#FFA500",
+          padding: "4px 8px",
+          borderRadius: 6,
+          textTransform: "uppercase",
+          flexShrink: 0,
+        }}>
+          {caregiver.status || "ACTIVE"}
+        </span>
+      </div>
+      
+      {/* Details Grid */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 10,
+        paddingTop: 8,
+        borderTop: "1px solid rgba(255,255,255,0.2)",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <span style={{
+            fontSize: 11,
+            color: "rgba(255,255,255,0.6)",
+            fontWeight: 600,
+            textTransform: "uppercase",
+          }}>
+            Role
+          </span>
+          <span style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: W,
+          }}>
+            {caregiver.role || "N/A"}
+          </span>
+        </div>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <span style={{
+            fontSize: 11,
+            color: "rgba(255,255,255,0.6)",
+            fontWeight: 600,
+            textTransform: "uppercase",
+          }}>
+            Shift
+          </span>
+          <span style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: W,
+          }}>
+            {caregiver.shift_type || caregiver.primary_shift || "N/A"}
+          </span>
+        </div>
+      </div>
+
+      {/* Assignment Info */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 8,
+        borderTop: "1px solid rgba(255,255,255,0.2)",
+      }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6ADD00" strokeWidth="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <path d="M22 4L12 14.01l-3-3"/>
+          </svg>
+          <span style={{
+            fontSize: 12,
+            color: "rgba(255,255,255,0.8)",
+            fontWeight: 600,
+          }}>
+            {caregiver.assignment_type || "PRIMARY"}
+          </span>
+        </div>
+        
+        {caregiver.assigned_date && caregiver.assigned_date !== 'N/A' && (
+          <span style={{
+            fontSize: 11,
+            color: "rgba(255,255,255,0.6)",
+          }}>
+            Assigned: {formatDate(caregiver.assigned_date)}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

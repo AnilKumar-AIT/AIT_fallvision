@@ -1,12 +1,67 @@
-"""
-Caregivers API Routes
-"""
-from fastapi import APIRouter, HTTPException
-from typing import List, Dict
+"""Caregivers API Routes"""
+import json
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from typing import List, Dict, Optional
 from ..services.dynamodb_service import db_service
+from ..services.s3_service import s3_service
 from ..config import settings
 
 router = APIRouter(prefix="/caregivers", tags=["Caregivers"])
+
+@router.post("/")
+async def create_caregiver(
+    caregiver_data: str = Form(...),
+    photo: Optional[UploadFile] = File(None)
+) -> Dict:
+    """Create a new caregiver with optional photo upload"""
+    try:
+        # Parse the JSON form data
+        data = json.loads(caregiver_data)
+        
+        facility_id = settings.FACILITY_ID
+        photo_s3_key = None
+        
+        # Handle photo upload if provided
+        if photo and photo.filename:
+            file_bytes = await photo.read()
+            if len(file_bytes) > 0:
+                from datetime import datetime, timezone
+                import uuid
+                now = datetime.now(timezone.utc)
+                date_part = now.strftime("%Y%m%d")
+                short_uuid = uuid.uuid4().hex[:4]
+                temp_caregiver_id = f"CG#cg-{date_part}-{short_uuid}"
+                
+                # Upload to caregivers folder in S3
+                photo_s3_key = s3_service.upload_caregiver_photo(
+                    facility_id=facility_id,
+                    caregiver_id=temp_caregiver_id,
+                    file_bytes=file_bytes,
+                    content_type=photo.content_type or "image/jpeg"
+                )
+                
+                # Override the caregiver_id in data to match the one used for S3
+                data["_override_caregiver_id"] = temp_caregiver_id
+        
+        # Create the caregiver in DynamoDB
+        created = db_service.create_caregiver(
+            facility_id=facility_id,
+            caregiver_data=data,
+            photo_s3_key=photo_s3_key
+        )
+        
+        return {
+            "message": "Caregiver created successfully",
+            "caregiver": created
+        }
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON in caregiver_data")
+    except Exception as e:
+        print(f"[ERROR] Create caregiver failed: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/")
 async def get_all_caregivers() -> Dict:
@@ -19,6 +74,35 @@ async def get_all_caregivers() -> Dict:
             "caregivers": caregivers
         }
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{caregiver_id}")
+async def update_caregiver(
+    caregiver_id: str,
+    caregiver_data: Dict
+) -> Dict:
+    """Update an existing caregiver's information"""
+    try:
+        facility_id = settings.FACILITY_ID
+        
+        # Update the caregiver in DynamoDB
+        updated = db_service.update_caregiver(
+            facility_id=facility_id,
+            caregiver_id=caregiver_id,
+            caregiver_data=caregiver_data
+        )
+        
+        return {
+            "message": "Caregiver updated successfully",
+            "caregiver": updated
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        print(f"[ERROR] Update caregiver failed: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

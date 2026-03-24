@@ -3,7 +3,7 @@ import useWindowSize from "../hooks/useWindowSize";
 import apiService from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
-import profileIcon from "../assets/caregivers.svg";
+import profileIcon from "../assets/seniors.svg";
 import trashIcon from "../assets/Trash.svg";
 
 /* ═══════════════════════ CONSTANTS ═══════════════════════ */
@@ -111,15 +111,15 @@ export function FilterButton({ label, value, options, onChange, isMobile }) {
 }
 
 /* ═══════════════════════ PAGE ═══════════════════════ */
-export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
-  const [caregivers, setCaregivers] = useState([]);
-  const [filteredCaregivers, setFilteredCaregivers] = useState([]);
+export default function SeniorsPage({ onFiltersChange, onResidentClick, onAddSenior, onEditResident }) {
+  const [residents, setResidents] = useState([]);
+  const [filteredResidents, setFilteredResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRole, setSelectedRole] = useState("All");
-  const [selectedShift, setSelectedShift] = useState("All");
-  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState("All");
+  const [selectedSleepQuality, setSelectedSleepQuality] = useState("All");
+  const [selectedRiskLevel, setSelectedRiskLevel] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
@@ -127,58 +127,71 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
   useEffect(() => {
     if (onFiltersChange) {
       onFiltersChange({
-        selectedRole,
-        setSelectedRole,
-        selectedShift,
-        setSelectedShift,
-        selectedStatus,
-        setSelectedStatus,
+        selectedAgeGroup,
+        setSelectedAgeGroup,
+        selectedSleepQuality,
+        setSelectedSleepQuality,
+        selectedRiskLevel,
+        setSelectedRiskLevel,
       });
     }
-  }, [selectedRole, selectedShift, selectedStatus, onFiltersChange]);
+  }, [selectedAgeGroup, selectedSleepQuality, selectedRiskLevel, onFiltersChange]);
   
   const { isMobile } = useWindowSize();
 
   useEffect(() => {
-    loadCaregivers();
+    loadResidents();
   }, []);
 
-  const loadCaregivers = async () => {
+  const loadResidents = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiService.getAllCaregivers();
+      const data = await apiService.getAllResidents();
       console.log('API Response:', data);
-      console.log('Raw Caregivers:', data.caregivers);
+      console.log('Raw Residents:', data.residents);
       
-      if (!data || !data.caregivers || data.caregivers.length === 0) {
-        console.warn('No caregivers data received from API');
-        setCaregivers([]);
+      // Check if we have any residents
+      if (!data || !data.residents || data.residents.length === 0) {
+        console.warn('No residents data received from API');
+        setResidents([]);
         return;
       }
       
-      const transformedCaregivers = data.caregivers.map((c, index) => {
-        console.log(`Processing caregiver ${index}:`, c);
+      // Transform the data to extract needed fields from database
+      const transformedResidents = data.residents.map((r, index) => {
+        console.log(`Processing resident ${index}:`, r);
         
-        const displayName = c.display_name || 'Unknown Caregiver';
+        // Extract name from status_name_sort field: "ACTIVE#LastName#FirstName#RES#..."
+        let displayName = 'Unknown Resident';
+        if (r.status_name_sort) {
+          const parts = r.status_name_sort.split('#');
+          if (parts.length >= 3) {
+            const lastName = parts[1] || '';
+            const firstName = parts[2] || '';
+            displayName = `${firstName} ${lastName}`.trim();
+          }
+        }
+        
+        const roomNumber = (r.room_id || '').replace('ROOM#r-', '') || 'N/A';
         
         return {
-          caregiver_id: c.caregiver_id || `CG#unknown-${index}`,
-          name: displayName,
-          role: c.role || 'CNA',
-          shift: c.primary_shift || 'DAY',
-          status: c.status || 'ACTIVE',
-          badge_id: c.badge_id || 'N/A',
-          employee_id: c.employee_id || 'N/A',
-          email: c.email || 'N/A',
-          phone: c.phone || 'N/A'
+          resident_id: r.resident_id || `RES#unknown-${index}`,
+          name: displayName, // Extract from database field
+          room_id: roomNumber,
+          age: parseInt(r.age) || 0,
+          fall_risk_level: r.fall_risk_level || 'MODERATE',
+          latest_sleep_quality: r.latest_sleep_quality || 'AVERAGE',
+          age_group: r.age_group || 'N/A',
+          status: r.status || 'ACTIVE',
+          mrn: r.mrn || 'N/A'
         };
       });
       
-      console.log('Transformed Caregivers:', transformedCaregivers);
-      setCaregivers(transformedCaregivers);
+      console.log('Transformed Residents:', transformedResidents);
+      setResidents(transformedResidents);
     } catch (err) {
-      console.error('Failed to load caregivers - Full Error:', err);
+      console.error('Failed to load residents - Full Error:', err);
       console.error('Error message:', err.message);
       console.error('Error stack:', err.stack);
       setError(err);
@@ -187,47 +200,62 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
     }
   };
 
-  const filterCaregivers = useCallback(() => {
-    let filtered = [...caregivers];
+  const filterResidents = useCallback(() => {
+    let filtered = [...residents];
 
     // Search filter
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(c => 
-        (c.name || "").toLowerCase().includes(search) ||
-        (c.caregiver_id || "").toLowerCase().includes(search) ||
-        (c.badge_id || "").toLowerCase().includes(search) ||
-        (c.employee_id || "").toLowerCase().includes(search)
+      filtered = filtered.filter(r => 
+        (r.name || "").toLowerCase().includes(search) ||
+        (r.resident_id || "").toLowerCase().includes(search) ||
+        (r.room_id || "").toString().toLowerCase().includes(search)
       );
     }
 
-    // Role filter
-    if (selectedRole !== "All") {
-      filtered = filtered.filter(c => c.role === selectedRole);
+    // Age group filter
+    if (selectedAgeGroup !== "All") {
+      filtered = filtered.filter(r => {
+        const age = r.age || 0;
+        switch(selectedAgeGroup) {
+          case "60-70": return age >= 60 && age <= 70;
+          case "71-80": return age >= 71 && age <= 80;
+          case "81+": return age >= 81;
+          default: return true;
+        }
+      });
     }
 
-    // Shift filter
-    if (selectedShift !== "All") {
-      filtered = filtered.filter(c => c.shift === selectedShift);
+    // Sleep quality filter
+    if (selectedSleepQuality !== "All") {
+      filtered = filtered.filter(r => r.latest_sleep_quality === selectedSleepQuality);
     }
 
-    // Status filter
-    if (selectedStatus !== "All") {
-      filtered = filtered.filter(c => c.status === selectedStatus);
+    // Risk level filter
+    if (selectedRiskLevel !== "All") {
+      filtered = filtered.filter(r => r.fall_risk_level === selectedRiskLevel);
     }
 
-    setFilteredCaregivers(filtered);
-    setCurrentPage(1);
-  }, [caregivers, searchTerm, selectedRole, selectedShift, selectedStatus]);
+    setFilteredResidents(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [residents, searchTerm, selectedAgeGroup, selectedSleepQuality, selectedRiskLevel]);
 
+  // Filter residents when filters or search term changes
   useEffect(() => {
-    filterCaregivers();
-  }, [filterCaregivers]);
+    filterResidents();
+  }, [filterResidents]);
 
-  const handleDeleteCaregiver = (caregiverId) => {
-    console.log("Delete caregiver:", caregiverId);
-    if (window.confirm("Are you sure you want to remove this caregiver?")) {
-      setCaregivers(caregivers.filter(c => c.caregiver_id !== caregiverId));
+  const handleDeleteResident = async (residentId) => {
+    if (!window.confirm("Are you sure you want to remove this resident? This will also delete their photo and emergency contacts.")) {
+      return;
+    }
+    try {
+      await apiService.deleteResident(residentId);
+      // Remove from local state so the list updates instantly
+      setResidents(residents.filter(r => r.resident_id !== residentId));
+    } catch (err) {
+      console.error('Failed to delete resident:', err);
+      alert('Failed to delete resident. Please try again.');
     }
   };
 
@@ -241,7 +269,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
         paddingTop: 120, 
         minHeight: "100vh" 
       }}>
-        <LoadingSpinner message="Loading caregivers..." />
+        <LoadingSpinner message="Loading residents..." />
       </main>
     );
   }
@@ -249,14 +277,13 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
   if (error) {
     return (
       <main style={{ 
-        flex: 1, 
         display: "flex", 
         alignItems: "center", 
         justifyContent: "center", 
         paddingTop: 120, 
         minHeight: "100vh" 
       }}>
-        <ErrorMessage error={error} onRetry={loadCaregivers} />
+        <ErrorMessage error={error} onRetry={loadResidents} />
       </main>
     );
   }
@@ -265,10 +292,10 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
   const cardPadding = isMobile ? "14px 16px" : "16px 20px";
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredCaregivers.length / recordsPerPage);
+  const totalPages = Math.ceil(filteredResidents.length / recordsPerPage);
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredCaregivers.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentRecords = filteredResidents.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -277,8 +304,9 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
   return (
     <main style={{
       flex: 1,
-      padding: isMobile ? "10px 10px" : "12px 16px",
-      overflowY: "auto",
+
+      padding: isMobile ? "10px 10px" : "12px 60px",
+      overflowY: "hidden",
       display: "flex",
       flexDirection: "column",
       gap,
@@ -290,11 +318,11 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
       paddingTop: isMobile ? 80 : 150,
       paddingBottom: isMobile ? 10 : 6,
       marginTop: 0,
-      minHeight: "100vh",
+      height: "100vh",
       boxSizing: "border-box",
     }}>
       
-      {/* ═══ SEARCH BAR & ADD CAREGIVER BUTTON ═══ */}
+      {/* ═══ SEARCH BAR & ADD SENIOR BUTTON ═══ */}
       <div style={{
         background: "#042558",
         border: "1px solid #FFFFFF",
@@ -305,7 +333,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
         gap: isMobile ? 10 : 16,
         flexWrap: isMobile ? "wrap" : "nowrap",
       }}>
-        {/* "Caregivers" Label Button */}
+        {/* "Seniors" Label Button */}
         <button style={{
           background: "rgba(255,255,255,0.12)",
           border: "1px solid #FFFFFF",
@@ -318,7 +346,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
           whiteSpace: "nowrap",
           lineHeight: "94%",
         }}>
-          Caregivers
+          Seniors
         </button>
 
         {/* Search Bar */}
@@ -390,18 +418,22 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
           )}
         </div>
 
-        {/* Add Caregiver Label (text only) */}
-        <span style={{
-          fontSize: 16,
-          fontWeight: 500,
-          color: W,
-          whiteSpace: "nowrap",
-          flexShrink: 0,
-        }}>
-          Add Caregiver
+        {/* Add Senior Label (text only) */}
+        <span 
+          onClick={() => onAddSenior && onAddSenior()}
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            color: W,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            cursor: "pointer",
+          }}
+        >
+          Add Senior
         </span>
 
-        {/* Add Caregiver Button */}
+        {/* Add Senior Button */}
         <div style={{
           position: "relative",
           width: 94,
@@ -415,7 +447,9 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
             background: "#6ADD00",
             borderRadius: "50%",
           }} />
-          <button style={{
+          <button 
+          onClick={() => onAddSenior && onAddSenior()}
+          style={{
             position: "absolute",
             left: 9,
             top: 9,
@@ -430,11 +464,11 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
             cursor: "pointer",
             boxShadow: "0px 4px 9.8px 9px rgba(0, 0, 0, 0.25), inset 0px 2px 9px 3px rgba(0, 0, 0, 0.27)",
           }}
-          title="Add Caregiver"
+          title="Add Senior"
           >
             <img 
               src={profileIcon} 
-              alt="Add Caregiver" 
+              alt="Add Senior" 
               style={{ 
                 width: 41, 
                 height: 41,
@@ -444,7 +478,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
         </div>
       </div>
 
-      {/* ═══ CAREGIVERS GRID ═══ */}
+      {/* ═══ RESIDENTS GRID ═══ */}
       <div style={{
         background: "#042558",
         border: "1px solid #FFFFFF",
@@ -453,13 +487,19 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
         display: "flex",
         flexDirection: "column",
         gap: 20,
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
       }}>
-        {/* Caregivers Grid */}
+        {/* Residents Grid */}
         <div style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: isMobile ? 16 : 20,
-          minHeight: "400px",
+          overflowY: "auto",
+          flex: 1,
+          minHeight: 0,
+          paddingRight: 8,
         }}>
           {currentRecords.length === 0 ? (
             <div style={{
@@ -478,24 +518,25 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
                 <path d="M12 8v4M12 16h.01"/>
               </svg>
               <p style={{ fontSize: 16, margin: 0 }}>
-                {searchTerm ? "No caregivers found matching your search" : "No caregivers available"}
+                {searchTerm ? "No residents found matching your search" : "No residents available"}
               </p>
             </div>
           ) : (
-            currentRecords.map((caregiver) => (
-              <CaregiverCard
-                key={caregiver.caregiver_id}
-                caregiver={caregiver}
-                onDelete={handleDeleteCaregiver}
-                onClick={() => onCaregiverClick && onCaregiverClick(caregiver.caregiver_id)}
+            currentRecords.map((resident) => (
+              <ResidentCard
+                key={resident.resident_id}
+                resident={resident}
+                onDelete={handleDeleteResident}
+                onEdit={onEditResident}
+                onClick={() => onResidentClick && onResidentClick(resident.resident_id)}
                 isMobile={isMobile}
               />
             ))
           )}
         </div>
 
-        {/* Pagination Controls */}
-        {filteredCaregivers.length > 0 && (
+        {/* Pagination Controls - Always Visible */}
+        {filteredResidents.length > 0 && (
           <div style={{
             display: "flex",
             alignItems: "center",
@@ -514,16 +555,16 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
               fontWeight: 500,
               whiteSpace: "nowrap",
             }}>
-              Showing {indexOfFirstRecord + 1} - {Math.min(indexOfLastRecord, filteredCaregivers.length)} of {filteredCaregivers.length} caregivers
+              Showing {indexOfFirstRecord + 1} - {Math.min(indexOfLastRecord, filteredResidents.length)} of {filteredResidents.length} residents
             </span>
 
-            {/* Page Controls */}
+            {/* Page Controls - Always show even if only 1 page */}
             <div style={{
               display: "flex",
               alignItems: "center",
               gap: 8,
             }}>
-              {/* Previous Button */}
+              {/* Previous Button with Arrow */}
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
@@ -555,6 +596,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
                   }
                 }}
               >
+                {/* Left Arrow Icon */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M15 18l-6-6 6-6"/>
                 </svg>
@@ -563,6 +605,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
 
               {/* Page Numbers */}
               {totalPages > 1 && Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => {
+                // Show first page, last page, current page, and pages around current
                 if (
                   pageNumber === 1 ||
                   pageNumber === totalPages ||
@@ -613,7 +656,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
                 return null;
               })}
 
-              {/* Next Button */}
+              {/* Next Button with Arrow */}
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
@@ -646,6 +689,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
                 }}
               >
                 {!isMobile && "Next"}
+                {/* Right Arrow Icon */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 18l6-6-6-6"/>
                 </svg>
@@ -658,33 +702,33 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick }) {
   );
 }
 
-/* ═══════════════════════ CAREGIVER CARD COMPONENT ═══════════════════════ */
-function CaregiverCard({ caregiver, onDelete, onClick, isMobile }) {
+/* ═══════════════════════ RESIDENT CARD COMPONENT ═══════════════════════ */
+function ResidentCard({ resident, onDelete, onEdit, onClick, isMobile }) {
   return (
     <div 
       onClick={onClick}
       style={{
-        background: "rgba(255, 255, 255, 0.12)",
-        border: "2px solid #FFFFFF",
-        borderRadius: 16,
-        padding: 16,
-        height: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 16,
-        transition: "transform 0.2s, box-shadow 0.2s",
-        cursor: "pointer",
-        position: "relative",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.3)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
+      background: "rgba(255, 255, 255, 0.12)",
+      border: "2px solid #FFFFFF",
+      borderRadius: 16,
+      padding: 16,
+      height: 60,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 16,
+      transition: "transform 0.2s, box-shadow 0.2s",
+      cursor: "pointer",
+      position: "relative",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.3)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "none";
+    }}
     >
       {/* Profile Picture */}
       <div style={{
@@ -704,7 +748,7 @@ function CaregiverCard({ caregiver, onDelete, onClick, isMobile }) {
         </svg>
       </div>
 
-      {/* Caregiver Name - Centered */}
+      {/* Resident Name - Centered */}
       <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
         <p style={{
           margin: 0,
@@ -717,15 +761,15 @@ function CaregiverCard({ caregiver, onDelete, onClick, isMobile }) {
           overflow: "hidden",
           textOverflow: "ellipsis",
         }}>
-          {caregiver.name || "Unknown Caregiver"}
+          {resident.name || "Unknown Resident"}
         </p>
       </div>
 
-      {/* Delete Button */}
+      {/* Edit Button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onDelete(caregiver.caregiver_id);
+          onEdit && onEdit(resident);
         }}
         style={{
           background: "transparent",
@@ -745,7 +789,39 @@ function CaregiverCard({ caregiver, onDelete, onClick, isMobile }) {
         onMouseLeave={(e) => {
           e.currentTarget.style.opacity = "1";
         }}
-        title="Remove caregiver"
+        title="Edit resident"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+
+      {/* Delete Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(resident.resident_id);
+        }}
+        style={{
+          background: "transparent",
+          border: "none",
+          width: 18,
+          height: 18,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          flexShrink: 0,
+          transition: "opacity 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "0.7";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "1";
+        }}
+        title="Remove resident"
       >
         <img src={trashIcon} alt="Delete" style={{ width: 18, height: 18 }} />
       </button>

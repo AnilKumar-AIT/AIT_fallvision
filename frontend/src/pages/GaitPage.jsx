@@ -115,7 +115,25 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
 
   if (loading) {
     return (
-      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
+        {showBackButton && onBackToResident && (
+          <button
+            onClick={onBackToResident}
+            style={{
+              position: "fixed", top: 80, left: 20, zIndex: 1001,
+              background: "rgba(4,37,88,0.95)", border: "2px solid #FFFFFF",
+              borderRadius: 12, padding: "12px 20px", color: W,
+              fontSize: 16, fontWeight: 600, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 8,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2.5" strokeLinecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Resident Details
+          </button>
+        )}
         <LoadingSpinner message="Loading gait data..." />
       </main>
     );
@@ -123,7 +141,25 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
 
   if (error || !gaitData) {
     return (
-      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
+        {showBackButton && onBackToResident && (
+          <button
+            onClick={onBackToResident}
+            style={{
+              position: "fixed", top: 80, left: 20, zIndex: 1001,
+              background: "rgba(4,37,88,0.95)", border: "2px solid #FFFFFF",
+              borderRadius: 12, padding: "12px 20px", color: W,
+              fontSize: 16, fontWeight: 600, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 8,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2.5" strokeLinecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Resident Details
+          </button>
+        )}
         <ErrorMessage error={error} onRetry={loadGaitData} residentId={activeResidentId} />
       </main>
     );
@@ -181,7 +217,8 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
   return (
     <main style={{
       flex: 1,
-      padding: isMobile ? "10px 10px" : "12px 16px",
+
+      padding: isMobile ? "10px 10px" : "12px 60px",
       overflowY: "auto",
       display: "flex",
       flexDirection: "column",

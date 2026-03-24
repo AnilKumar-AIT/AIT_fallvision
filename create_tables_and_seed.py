@@ -377,7 +377,7 @@ def seed_residents():
             "fall_risk_level": {"S": rl}, "fall_risk_score": {"N": str(rand_float(0.1,0.95,2))},
             "latest_sleep_quality": {"S": sq}, "monitoring_active": {"BOOL": True},
             "sleep_monitoring_consent": {"BOOL": True}, "video_clip_consent": {"BOOL": True},
-            "photo_s3_key": {"S": f"resident-photos/f-001/{RESIDENT_IDS[i].split('#')[1]}/avatar.enc"},
+            "photo_s3_key": {"S": f"residents/f-001/{RESIDENT_IDS[i].split('#')[1]}/avatar.enc"},
             "status": {"S": "ACTIVE"},
             "status_name_sort": {"S": f"ACTIVE#{ln}#{fn}#{RESIDENT_IDS[i]}"},
             "created_at": {"S": iso_now(-10000-i*100)}, "updated_at": {"S": iso_now(-i*10)},
@@ -405,7 +405,7 @@ def seed_caregivers():
             "mfa_enabled": {"BOOL": True}, "status": {"S": "ACTIVE"},
             "status_display_name": {"S": f"ACTIVE#{fn} {ln}, {role}"},
             "license_status_expiry": {"S": f"ACTIVE#2026-{str(rand_int(1,12)).zfill(2)}-30"},
-            "photo_s3_key": {"S": f"caregiver-photos/f-001/{CAREGIVER_IDS[i].split('#')[1]}/avatar.jpg"},
+            "photo_s3_key": {"S": f"caregivers/f-001/{CAREGIVER_IDS[i].split('#')[1]}/avatar.jpg"},
             "created_at": {"S": iso_now(-20000)}, "updated_at": {"S": iso_now(-rand_int(0,500))},
             "version": {"N": str(rand_int(1,10))}})
     return "caregivers", items
@@ -658,7 +658,7 @@ def seed_entity_display_cache():
             "entity_type_sort_key": {"S": f"RES#{ln}#{fn}#{RESIDENT_IDS[i]}"},
             "entity_type": {"S": "RES"}, "entity_id": {"S": RESIDENT_IDS[i]},
             "display_name_enc": {"B": fake_encrypted()},
-            "photo_s3_key": {"S": f"resident-photos/f-001/{RESIDENT_IDS[i].split('#')[1]}/thumb_64x64.enc"},
+            "photo_s3_key": {"S": f"residents/f-001/{RESIDENT_IDS[i].split('#')[1]}/thumb_64x64.enc"},
             "role": {"S": "RESIDENT"}, "room_label": {"S": f"Room {201+i}"},
             "fall_risk_level": {"S": random.choice(["LOW","MODERATE","HIGH"])},
             "status": {"S": "ACTIVE"}, "updated_at": {"S": iso_now()}, "ttl": {"N": str(epoch_ttl(0)+3600)}})
@@ -668,7 +668,7 @@ def seed_entity_display_cache():
             "entity_type_sort_key": {"S": f"CG#{ln}#{fn}#{CAREGIVER_IDS[i]}"},
             "entity_type": {"S": "CG"}, "entity_id": {"S": CAREGIVER_IDS[i]},
             "display_name_enc": {"B": fake_encrypted()},
-            "photo_s3_key": {"S": f"caregiver-photos/f-001/{CAREGIVER_IDS[i].split('#')[1]}/avatar.jpg"},
+            "photo_s3_key": {"S": f"caregivers/f-001/{CAREGIVER_IDS[i].split('#')[1]}/avatar.jpg"},
             "role": {"S": role}, "shift": {"S": ["DAY","EVENING","NIGHT"][i%3]},
             "status": {"S": "ACTIVE"}, "updated_at": {"S": iso_now()}, "ttl": {"N": str(epoch_ttl(0)+3600)}})
     return "entity_display_cache", items
