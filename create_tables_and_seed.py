@@ -2,10 +2,10 @@
 """
 AITCare-FallVision - DynamoDB Table Creator & Seed Data Generator
 =================================================================
-Creates all 25 optimized DynamoDB tables (+ 3 S3 bucket structures)
+Creates all 31 optimized DynamoDB tables (+ 4 S3 bucket structures)
 and seeds each table with 10 realistic dummy records.
 
-Architecture Reference: DB_Optimization_Guide.md (28 tables = 25 DynamoDB + 3 S3)
+Architecture: 31 DynamoDB tables (27 core + 4 ADL) + 4 S3 tables = 35 total
 
 Usage:
     python create_tables_and_seed.py --region us-east-1 --env dev
@@ -15,8 +15,8 @@ Usage:
     python create_tables_and_seed.py --region us-east-1 --env dev --dry-run
 
 Author:  AI Tensors Inc.
-Date:    2026-03-16
-Version: 1.0
+Date:    2026-03-25
+Version: 2.0 (with ADL tables integrated)
 """
 
 import argparse, json, sys, time, uuid, random
@@ -33,6 +33,7 @@ except ImportError:
 # CONSTANTS
 # ============================================================================
 FACILITY_ID = "FAC#f-001"
+FACILITY_ID_FACCUSTOM = "FAC#fac-001"  # Used by existing tables
 ENV = "dev"
 NOW = datetime.now(timezone.utc)
 TODAY = NOW.strftime("%Y-%m-%d")
@@ -54,6 +55,16 @@ CAREGIVER_NAMES = [
 ]
 DEVICE_IDS = [f"DEV#jetson-room-{200 + i}" for i in range(1, 11)]
 FALL_IDS = [f"FALL#fall-{uuid.uuid4().hex[:12]}" for _ in range(10)]
+
+# ADL Constants
+ACTIVITY_TYPES = ["SIT", "STAND", "WALK", "TRANSFER", "LYING", "REACHING", "BENDING", "OTHER"]
+TRANSITION_TYPES = [
+    "SIT_TO_STAND", "STAND_TO_SIT", "STAND_TO_WALK", "WALK_TO_STAND",
+    "WALK_TO_SIT", "LYING_TO_SIT", "SIT_TO_LYING", "BED_TO_STAND",
+    "STAND_TO_BED", "CHAIR_TO_STAND", "NONE"
+]
+ZONES = ["patient_room", "hallway", "bathroom", "common_area", "dining"]
+MOBILITY_AIDS = ["NONE", "WALKER", "CANE", "WHEELCHAIR", "BED_RAIL"]
 
 def iso_now(offset_minutes=0):
     return (NOW + timedelta(minutes=offset_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -333,12 +344,101 @@ def get_table_definitions():
         "BillingMode": "PAY_PER_REQUEST",
         "Tags": [{"Key": "Project", "Value": "AITCare-FallVision"}, {"Key": "Tier", "Value": "7-Supporting"}]})
 
-    # T27. smart_suggestion_templates
+        # T27. smart_suggestion_templates
     tables.append({"TableName": "smart_suggestion_templates",
         "KeySchema": [{"AttributeName": "template_category", "KeyType": "HASH"}, {"AttributeName": "template_id", "KeyType": "RANGE"}],
         "AttributeDefinitions": [{"AttributeName": "template_category", "AttributeType": "S"}, {"AttributeName": "template_id", "AttributeType": "S"}],
         "BillingMode": "PAY_PER_REQUEST",
         "Tags": [{"Key": "Project", "Value": "AITCare-FallVision"}, {"Key": "Tier", "Value": "7-Supporting"}]})
+
+    # ========================================================================
+    # ADL (Activities of Daily Living) TABLES (T28-T31)
+    # ========================================================================
+
+    # T28. adl_activity_events
+    tables.append({
+        "TableName": "adl_activity_events",
+        "KeySchema": [
+            {"AttributeName": "resident_id", "KeyType": "HASH"},
+            {"AttributeName": "event_ts", "KeyType": "RANGE"}],
+        "AttributeDefinitions": [
+            {"AttributeName": "resident_id", "AttributeType": "S"},
+            {"AttributeName": "event_ts", "AttributeType": "S"},
+            {"AttributeName": "facility_id", "AttributeType": "S"},
+            {"AttributeName": "activity_zone_ts", "AttributeType": "S"}],
+        "GlobalSecondaryIndexes": [
+            {"IndexName": "gsi-facility-ts",
+             "KeySchema": [{"AttributeName": "facility_id", "KeyType": "HASH"},
+                           {"AttributeName": "event_ts", "KeyType": "RANGE"}],
+             "Projection": {"ProjectionType": "ALL"}},
+            {"IndexName": "gsi-facility-activity",
+             "KeySchema": [{"AttributeName": "facility_id", "KeyType": "HASH"},
+                           {"AttributeName": "activity_zone_ts", "KeyType": "RANGE"}],
+             "Projection": {"ProjectionType": "ALL"}}],
+        "BillingMode": "PAY_PER_REQUEST",
+        "Tags": [{"Key": "Project", "Value": "AITCare-FallVision"},
+                 {"Key": "Tier", "Value": "2-TimeSeries"},
+                 {"Key": "Screen", "Value": "ADL-Monitoring"}]})
+
+    # T29. adl_hourly_summary
+    tables.append({
+        "TableName": "adl_hourly_summary",
+        "KeySchema": [
+            {"AttributeName": "resident_id", "KeyType": "HASH"},
+            {"AttributeName": "date_hour", "KeyType": "RANGE"}],
+        "AttributeDefinitions": [
+            {"AttributeName": "resident_id", "AttributeType": "S"},
+            {"AttributeName": "date_hour", "AttributeType": "S"},
+            {"AttributeName": "facility_id", "AttributeType": "S"}],
+        "GlobalSecondaryIndexes": [
+            {"IndexName": "gsi-facility-date-hour",
+             "KeySchema": [{"AttributeName": "facility_id", "KeyType": "HASH"},
+                           {"AttributeName": "date_hour", "KeyType": "RANGE"}],
+             "Projection": {"ProjectionType": "ALL"}}],
+        "BillingMode": "PAY_PER_REQUEST",
+        "Tags": [{"Key": "Project", "Value": "AITCare-FallVision"},
+                 {"Key": "Tier", "Value": "2-TimeSeries"},
+                 {"Key": "Screen", "Value": "ADL-Monitoring"}]})
+
+    # T30. adl_daily_summary
+    tables.append({
+        "TableName": "adl_daily_summary",
+        "KeySchema": [
+            {"AttributeName": "resident_id", "KeyType": "HASH"},
+            {"AttributeName": "summary_date", "KeyType": "RANGE"}],
+        "AttributeDefinitions": [
+            {"AttributeName": "resident_id", "AttributeType": "S"},
+            {"AttributeName": "summary_date", "AttributeType": "S"},
+            {"AttributeName": "facility_id", "AttributeType": "S"}],
+        "GlobalSecondaryIndexes": [
+            {"IndexName": "gsi-facility-date",
+             "KeySchema": [{"AttributeName": "facility_id", "KeyType": "HASH"},
+                           {"AttributeName": "summary_date", "KeyType": "RANGE"}],
+             "Projection": {"ProjectionType": "ALL"}}],
+        "BillingMode": "PAY_PER_REQUEST",
+        "Tags": [{"Key": "Project", "Value": "AITCare-FallVision"},
+                 {"Key": "Tier", "Value": "2-TimeSeries"},
+                 {"Key": "Screen", "Value": "ADL-Monitoring"}]})
+
+    # T31. adl_baselines
+    tables.append({
+        "TableName": "adl_baselines",
+        "KeySchema": [
+            {"AttributeName": "resident_id", "KeyType": "HASH"},
+            {"AttributeName": "baseline_type", "KeyType": "RANGE"}],
+        "AttributeDefinitions": [
+            {"AttributeName": "resident_id", "AttributeType": "S"},
+            {"AttributeName": "baseline_type", "AttributeType": "S"},
+            {"AttributeName": "facility_id", "AttributeType": "S"}],
+        "GlobalSecondaryIndexes": [
+            {"IndexName": "gsi-facility-baseline",
+             "KeySchema": [{"AttributeName": "facility_id", "KeyType": "HASH"},
+                           {"AttributeName": "baseline_type", "KeyType": "RANGE"}],
+             "Projection": {"ProjectionType": "ALL"}}],
+        "BillingMode": "PAY_PER_REQUEST",
+        "Tags": [{"Key": "Project", "Value": "AITCare-FallVision"},
+                 {"Key": "Tier", "Value": "2-TimeSeries"},
+                 {"Key": "Screen", "Value": "ADL-Monitoring"}]})
 
     return tables
 # ============================================================================
@@ -826,6 +926,262 @@ def seed_smart_suggestion_templates():
             "priority_default": {"S": "HIGH" if "fall" in text.lower() else "MEDIUM"},
             "enabled": {"BOOL": True}, "version": {"N": "1"}, "created_by": {"S": "SYSTEM"}})
     return "smart_suggestion_templates", items
+
+# ============================================================================
+# ADL SEED DATA GENERATORS (10 records per table)
+# ============================================================================
+
+def seed_adl_activity_events():
+    """Generate 10 sample ADL activity events"""
+    items = []
+    for i in range(10):
+        res_id = RESIDENT_IDS[i % 5]
+        offset = rand_int(0, 1440)
+        ts = (NOW - timedelta(minutes=offset)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        act = random.choice(["SIT", "STAND", "WALK", "TRANSFER", "LYING"])
+        prior = random.choice(["SIT", "STAND", "WALK", "LYING"])
+        zone = random.choice(ZONES)
+
+        transition = "NONE"
+        subtype = None
+        if act == "STAND" and prior == "SIT":
+            transition = "SIT_TO_STAND"
+            subtype = random.choice(["chair_to_stand", "bed_to_stand"])
+        elif act == "WALK" and prior == "STAND":
+            transition = "STAND_TO_WALK"
+            subtype = random.choice(["walking_aided", "walking_unaided"])
+        elif act == "SIT" and prior == "STAND":
+            transition = "STAND_TO_SIT"
+            subtype = "stand_to_sit"
+        elif act == "SIT" and prior == "WALK":
+            transition = "WALK_TO_SIT"
+            subtype = "walk_to_sit"
+
+        difficulty = rand_float(0.0, 1.0, 2)
+        is_anomaly = float(difficulty) > 0.7
+
+        item = {
+            "resident_id": {"S": res_id},
+            "event_ts": {"S": ts},
+            "event_id": {"S": f"AEVT#aevt-{uuid.uuid4().hex[:12]}"},
+            "facility_id": {"S": FACILITY_ID_FACCUSTOM},
+            "camera_id": {"S": f"CAM#c-room-{201 + i % 5}"},
+            "zone": {"S": zone},
+            "activity_type": {"S": act},
+            "prior_activity": {"S": prior},
+            "transition_type": {"S": transition},
+            "duration_sec": {"N": str(rand_int(5, 300))},
+            "confidence_score": {"N": str(rand_float(0.70, 0.98, 2))},
+            "detection_method": {"S": random.choice(["POSE_KEYPOINTS", "FUSED"])},
+            "mobility_aid_detected": {"S": random.choice(["NONE", "NONE", "NONE", "WALKER", "CANE"])},
+            "difficulty_score": {"N": str(difficulty)},
+            "anomaly_flag": {"BOOL": is_anomaly},
+            "gait_risk_score_at_event": {"N": str(rand_float(0.1, 0.9, 2))},
+            "fall_risk_level_at_event": {"S": random.choice(["LOW", "MODERATE", "HIGH"])},
+            "person_id_anonymous": {"S": f"PERSON_{str(i % 5 + 1).zfill(3)}"},
+            "facility_activity_ts": {"S": f"{FACILITY_ID_FACCUSTOM}#{ts}"},
+            "activity_zone_ts": {"S": f"{transition}#{zone}#{ts}"},
+            "ttl": {"N": str(epoch_ttl(7))}
+        }
+
+        if subtype:
+            item["activity_subtype"] = {"S": subtype}
+
+        if is_anomaly:
+            item["anomaly_reason"] = {"S": f"Transfer took {rand_int(20, 40)}s vs {rand_int(8, 15)}s baseline"}
+            item["vlm_description"] = {"S": random.choice([
+                "Resident slowly stood from chair, gripping armrests tightly. Appeared unsteady for 3 seconds.",
+                "Resident used walker to stand. Took two attempts before fully upright.",
+                "Resident walked with shuffling gait toward bathroom. Noticeable left-side lean."
+            ])}
+
+        items.append(item)
+    return "adl_activity_events", items
+
+
+def seed_adl_hourly_summary():
+    """Generate 10 hourly summaries (hours 7-16 for one resident)"""
+    items = []
+    for h in range(7, 17):  # 7 AM to 4 PM
+        sit = rand_int(10, 40)
+        stand = rand_int(5, 20)
+        walk = rand_int(2, 15)
+        lying = rand_int(0, 10) if h < 9 else 0
+        transfer = rand_int(1, 5)
+        other = max(0, 60 - sit - stand - walk - lying)
+        total_active = stand + walk
+
+        items.append({
+            "resident_id": {"S": RESIDENT_IDS[0]},
+            "date_hour": {"S": f"{TODAY}#{str(h).zfill(2)}"},
+            "facility_id": {"S": FACILITY_ID_FACCUSTOM},
+            "hour_label": {"S": f"{h if h <= 12 else h - 12}{'AM' if h < 12 else 'PM'}"},
+            "sit_minutes": {"N": str(sit)},
+            "stand_minutes": {"N": str(stand)},
+            "walk_minutes": {"N": str(walk)},
+            "lying_minutes": {"N": str(lying)},
+            "transfer_count": {"N": str(transfer)},
+            "other_minutes": {"N": str(other)},
+            "total_active_minutes": {"N": str(total_active)},
+            "dominant_activity": {"S": "SIT" if sit >= stand and sit >= walk else ("STAND" if stand >= walk else "WALK")},
+            "sedentary_flag": {"BOOL": (sit + lying) > 45},
+            "walking_episodes": {"N": str(rand_int(0, 4))},
+            "avg_walking_speed": {"N": str(rand_float(0.3, 0.8, 2))},
+            "transitions_detail": {"M": {
+                "sit_to_stand": {"N": str(rand_int(1, 4))},
+                "stand_to_sit": {"N": str(rand_int(1, 4))},
+                "stand_to_walk": {"N": str(rand_int(0, 3))},
+                "walk_to_stand": {"N": str(rand_int(0, 3))}
+            }},
+            "anomaly_count": {"N": str(rand_int(0, 2))},
+            "facility_date_hour": {"S": f"{FACILITY_ID_FACCUSTOM}#{TODAY}#{str(h).zfill(2)}"},
+            "ttl": {"N": str(epoch_ttl(30))}
+        })
+    return "adl_hourly_summary", items
+
+
+def seed_adl_daily_summary():
+    """Generate 10 daily summaries (LATEST + 9 historical days)"""
+    items = []
+    for d in range(10):
+        dt = "LATEST" if d == 0 else (NOW - timedelta(days=d)).strftime("%Y-%m-%d")
+        active = rand_int(80, 200)
+        sedentary = rand_int(400, 700)
+        walking = rand_int(20, 60)
+        standing = rand_int(40, 80)
+        sitting = rand_int(300, 500)
+        lying = rand_int(100, 200)
+        sts = rand_int(6, 20)
+        walks = rand_int(4, 15)
+        score = rand_int(45, 90)
+        sed_over_60 = rand_int(0, 5)
+
+        items.append({
+            "resident_id": {"S": RESIDENT_IDS[0]},
+            "summary_date": {"S": dt},
+            "facility_id": {"S": FACILITY_ID_FACCUSTOM},
+            "total_active_minutes": {"N": str(active)},
+            "total_sedentary_minutes": {"N": str(sedentary)},
+            "total_walking_minutes": {"N": str(walking)},
+            "total_standing_minutes": {"N": str(standing)},
+            "total_sitting_minutes": {"N": str(sitting)},
+            "total_lying_minutes": {"N": str(lying)},
+            "sit_to_stand_count": {"N": str(sts)},
+            "stand_to_sit_count": {"N": str(sts - rand_int(0, 2))},
+            "bed_transfers": {"N": str(rand_int(2, 6))},
+            "walking_episodes": {"N": str(walks)},
+            "avg_walk_duration_sec": {"N": str(rand_int(120, 600))},
+            "avg_transfer_duration_sec": {"N": str(rand_int(8, 25))},
+            "longest_sedentary_min": {"N": str(rand_int(45, 120))},
+            "sedentary_stretches_over_60min": {"N": str(sed_over_60)},
+            "sedentary_stretches_over_30min": {"N": str(sed_over_60 + rand_int(1, 4))},
+            "adl_independence_score": {"N": str(score)},
+            "independence_score_delta": {"N": str(rand_float(-15, 10))},
+            "mobility_aid_usage_pct": {"N": str(rand_float(0, 60))},
+            "bathroom_visits": {"N": str(rand_int(3, 8))},
+            "dining_visits": {"N": str(rand_int(1, 3))},
+            "activity_distribution": {"M": {
+                "SIT": {"N": str(rand_int(35, 55))},
+                "STAND": {"N": str(rand_int(10, 25))},
+                "WALK": {"N": str(rand_int(8, 20))},
+                "LYING": {"N": str(rand_int(8, 20))},
+                "TRANSFER": {"N": str(rand_int(1, 5))},
+                "OTHER": {"N": str(rand_int(1, 5))}
+            }},
+            "anomaly_events": {"N": str(rand_int(0, 5))},
+            "vlm_daily_summary": {"S": f"Resident had a moderately active day with {sts} sit-to-stand transfers. Walking concentrated in morning. Independence score at {score}."},
+            "alerts_generated": {"N": str(rand_int(0, 4))},
+            "active_minutes_delta_pct": {"N": str(rand_float(-25, 15))},
+            "sit_to_stand_delta_pct": {"N": str(rand_float(-30, 10))},
+            "walking_episodes_delta_pct": {"N": str(rand_float(-20, 10))},
+            "trend_7d": {"S": random.choice(["STABLE", "IMPROVING", "DECLINING"])},
+            "computed_at": {"S": iso_now(-d * 1440)},
+            "facility_score_date": {"S": f"{FACILITY_ID_FACCUSTOM}#{str(score).zfill(3)}#{dt}"},
+            "ttl": {"N": str(epoch_ttl(90))}
+        })
+    return "adl_daily_summary", items
+
+
+def seed_adl_baselines():
+    """Generate 10 baselines (3 per resident for first 3 residents + 1 extra)"""
+    items = []
+    baseline_types = ["ADMISSION", "ROLLING_7D", "ROLLING_30D"]
+
+    for r in range(3):
+        for bt in baseline_types:
+            active_avg = rand_int(100, 180)
+            sts_avg = rand_int(8, 18)
+            walk_avg = rand_int(6, 14)
+            transfer_sec_avg = rand_int(8, 18)
+
+            items.append({
+                "resident_id": {"S": RESIDENT_IDS[r]},
+                "baseline_type": {"S": bt},
+                "facility_id": {"S": FACILITY_ID_FACCUSTOM},
+                "avg_active_minutes": {"N": str(active_avg)},
+                "avg_sedentary_minutes": {"N": str(rand_int(400, 600))},
+                "avg_sit_to_stand_count": {"N": str(sts_avg)},
+                "avg_walking_episodes": {"N": str(walk_avg)},
+                "avg_walk_duration_sec": {"N": str(rand_int(180, 480))},
+                "avg_transfer_duration_sec": {"N": str(transfer_sec_avg)},
+                "avg_bed_transfers": {"N": str(rand_int(3, 6))},
+                "avg_bathroom_visits": {"N": str(rand_int(4, 8))},
+                "avg_longest_sedentary_min": {"N": str(rand_int(50, 90))},
+                "avg_independence_score": {"N": str(rand_int(55, 85))},
+                "hourly_activity_pattern": {"M": {
+                    "00": {"M": {"dominant": {"S": "LYING"}, "active_min": {"N": "0"}}},
+                    "06": {"M": {"dominant": {"S": "LYING"}, "active_min": {"N": "5"}}},
+                    "07": {"M": {"dominant": {"S": "SIT"}, "active_min": {"N": "12"}}},
+                    "08": {"M": {"dominant": {"S": "WALK"}, "active_min": {"N": "18"}}},
+                    "12": {"M": {"dominant": {"S": "SIT"}, "active_min": {"N": "10"}}},
+                    "14": {"M": {"dominant": {"S": "SIT"}, "active_min": {"N": "8"}}},
+                    "18": {"M": {"dominant": {"S": "WALK"}, "active_min": {"N": "15"}}},
+                    "22": {"M": {"dominant": {"S": "LYING"}, "active_min": {"N": "2"}}}
+                }},
+                "typical_wake_time": {"S": f"0{rand_int(5, 7)}:{rand_int(0, 59):02d}"},
+                "typical_first_walk": {"S": f"0{rand_int(7, 8)}:{rand_int(0, 59):02d}"},
+                "typical_last_walk": {"S": f"{rand_int(18, 20)}:{rand_int(0, 45):02d}"},
+                "typical_sleep_time": {"S": f"{rand_int(21, 23)}:{rand_int(0, 45):02d}"},
+                "anomaly_thresholds": {"M": {
+                    "active_min_low": {"N": str(int(active_avg * 0.7))},
+                    "sit_to_stand_low": {"N": str(int(sts_avg * 0.6))},
+                    "sedentary_stretch_high": {"N": str(rand_int(75, 100))},
+                    "transfer_time_high": {"N": str(int(transfer_sec_avg * 1.5))}
+                }},
+                "data_points": {"N": str(7 if bt == "ROLLING_7D" else (30 if bt == "ROLLING_30D" else rand_int(5, 7)))},
+                "computed_at": {"S": iso_now(-rand_int(0, 1440))},
+                "version": {"N": str(rand_int(1, 15))}
+            })
+
+    # 10th item: extra baseline
+    items.append({
+        "resident_id": {"S": RESIDENT_IDS[3]},
+        "baseline_type": {"S": "ROLLING_7D"},
+        "facility_id": {"S": FACILITY_ID_FACCUSTOM},
+        "avg_active_minutes": {"N": str(rand_int(90, 160))},
+        "avg_sedentary_minutes": {"N": str(rand_int(450, 600))},
+        "avg_sit_to_stand_count": {"N": str(rand_int(8, 16))},
+        "avg_walking_episodes": {"N": str(rand_int(5, 12))},
+        "avg_walk_duration_sec": {"N": str(rand_int(150, 400))},
+        "avg_transfer_duration_sec": {"N": str(rand_int(10, 20))},
+        "avg_bed_transfers": {"N": str(rand_int(3, 6))},
+        "avg_bathroom_visits": {"N": str(rand_int(4, 7))},
+        "avg_longest_sedentary_min": {"N": str(rand_int(55, 95))},
+        "avg_independence_score": {"N": str(rand_int(50, 80))},
+        "hourly_activity_pattern": {"M": {}},
+        "anomaly_thresholds": {"M": {
+            "active_min_low": {"N": "80"},
+            "sit_to_stand_low": {"N": "6"},
+            "sedentary_stretch_high": {"N": "90"},
+            "transfer_time_high": {"N": "25"}
+        }},
+        "data_points": {"N": "7"},
+        "computed_at": {"S": iso_now(-60)},
+        "version": {"N": "3"}
+    })
+
+    return "adl_baselines", items
+
 # ============================================================================
 # TABLE CREATION & SEEDING ENGINE
 # ============================================================================
@@ -880,7 +1236,10 @@ def seed_all_tables(dynamodb_client, seed_only_tables=None):
         seed_caregiver_resident_assignments, seed_caregiver_certifications,
         seed_caregiver_shift_schedule, seed_caregiver_performance_metrics,
         seed_resident_emergency_contacts, seed_resident_insurance,
-        seed_smart_suggestion_templates]
+        seed_smart_suggestion_templates,
+        # ADL Seeders
+        seed_adl_activity_events, seed_adl_hourly_summary,
+        seed_adl_daily_summary, seed_adl_baselines]
     total_items = 0
     for seeder in seeders:
         table_name, items = seeder()
@@ -1059,14 +1418,14 @@ def print_s3_structure():
 
 def print_summary(table_defs):
     print(f"\n{'='*70}")
-    print(f"  OPTIMIZED TABLE ARCHITECTURE SUMMARY (28 total)")
+    print(f"  OPTIMIZED TABLE ARCHITECTURE SUMMARY (31 DynamoDB + 4 S3 = 35 total)")
     print(f"{'='*70}\n")
     tiers = {"1-CoreEntity": "TIER 1: Core Entities", "2-TimeSeries": "TIER 2: Time-Series Sensor",
         "3-ClinicalEvent": "TIER 3: Clinical Events", "4-CrossCutting": "TIER 4: Unified Cross-Cutting",
         "5-Facility": "TIER 5: Facility-Level", "6-Assignment": "TIER 6: Assignments & Schedules",
         "7-Supporting": "TIER 7: Supporting"}
     total_gsi = 0
-    for tier_key, tier_label in tiers.items():
+        for tier_key, tier_label in tiers.items():
         tier_tables = [t for t in table_defs if any(tag["Value"] == tier_key for tag in t.get("Tags", []))]
         if tier_tables:
             print(f"  {tier_label}")
@@ -1076,9 +1435,9 @@ def print_summary(table_defs):
                 sk = [k["AttributeName"] for k in t["KeySchema"] if k["KeyType"]=="RANGE"][0]
                 print(f"    - {t['TableName']:40s} PK={pk}, SK={sk}  GSIs={gc}")
             print()
-    print(f"  + 3 S3-only tables: arm_swing_waveform, sleep_stages_epochs, fall_detection_raw")
-    print(f"\n  TOTALS: {len(table_defs)} DynamoDB tables, {total_gsi} GSIs, 3 S3 tables = 28 total")
-    print(f"  Seed data: 10 records per table = ~270 total records")
+    print(f"  + 4 S3-only tables: arm_swing_waveform, sleep_stages_epochs, fall_detection_raw, adl_raw_detections")
+    print(f"\n  TOTALS: {len(table_defs)} DynamoDB tables, {total_gsi} GSIs, 4 S3 tables = 35 total")
+    print(f"  Seed data: 10 records per table = ~310 total records (includes ADL)")
 
 
 # ============================================================================
@@ -1170,15 +1529,17 @@ def main():
 
     print_s3_structure()
 
-    print(f"\n{'='*70}")
-    print(f"  DONE! All 25 DynamoDB tables and 3 S3 buckets created and seeded.")
-    print(f"  Cost: ~$189/mo for 100 Residents (optimized from $215)")
+        print(f"\n{'='*70}")
+    print(f"  DONE! All 31 DynamoDB tables and 4 S3 buckets created and seeded.")
+    print(f"  Cost: ~$205/mo for 100 Residents (~$189 core + ~$16 ADL)")
     print(f"  S3 Storage: ~$50/mo for video clips + photos")
+    print(f"  Architecture: 31 DynamoDB (27 core + 4 ADL) + 4 S3 = 35 total tables")
     print(f"  Next steps:")
     print(f"    1. [x] S3 buckets created with encryption & lifecycle policies")
-    print(f"    2. Configure KMS keys for field-level encryption (optional)")
-    print(f"    3. Set up Cognito User Pool for authentication")
-    print(f"    4. Deploy API Gateway + Lambda endpoints")
+    print(f"    2. [x] ADL tables integrated and ready for use")
+    print(f"    3. Configure KMS keys for field-level encryption (optional)")
+    print(f"    4. Set up Cognito User Pool for authentication")
+    print(f"    5. Deploy API Gateway + Lambda endpoints")
     print(f"{'='*70}\n")
 
 

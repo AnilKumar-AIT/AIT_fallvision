@@ -1,0 +1,375 @@
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 10:50:42 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 10:50:42 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 10:50:42 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 10:50:42 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 10:50:42 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 10:51:17 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 10:51:18 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 10:51:18 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 10:51:18 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 10:51:32 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 10:51:32 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 10:51:32 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 10:51:32 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 11:03:48 | [32mINFO[0m | app.routes.caregivers | get_caregiver   | [CAREGIVER API] Details request for: CG#cg-20240708-0004
+2026-03-25 11:03:48 | [32mINFO[0m | app.routes.caregivers | get_caregiver   | [CAREGIVER API] Caregiver found: CG#cg-20240708-0004
+2026-03-25 11:03:48 | [32mINFO[0m | app.routes.caregivers | get_caregiver_performance | [CAREGIVER API] Performance request for: CG#cg-20240708-0004
+2026-03-25 11:03:48 | [32mINFO[0m | app.routes.caregivers | get_caregiver_performance | [CAREGIVER API] Performance data found for CG#cg-20240708-0004
+2026-03-25 11:05:48 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 11:05:48 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 11:05:48 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 11:05:48 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 11:05:54 | [32mINFO[0m | app.routes.caregivers | get_caregiver   | [CAREGIVER API] Details request for: CG#cg-20240708-0004
+2026-03-25 11:05:54 | [32mINFO[0m | app.routes.caregivers | get_caregiver   | [CAREGIVER API] Caregiver found: CG#cg-20240708-0004
+2026-03-25 11:05:54 | [32mINFO[0m | app.routes.caregivers | get_caregiver_performance | [CAREGIVER API] Performance request for: CG#cg-20240708-0004
+2026-03-25 11:05:54 | [32mINFO[0m | app.routes.caregivers | get_caregiver_performance | [CAREGIVER API] Performance data found for CG#cg-20240708-0004
+2026-03-25 11:06:08 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 11:06:08 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 11:06:08 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 11:06:08 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 12:18:01 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:18:01 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 12:18:01 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 12:18:01 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 12:18:01 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 12:18:30 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:18:30 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 12:18:30 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 12:18:30 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 12:18:30 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 12:52:45 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:52:45 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 12:52:45 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 12:52:45 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 12:52:45 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 12:52:57 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:52:57 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 12:52:57 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 12:52:57 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 12:52:57 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 12:59:01 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:59:01 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 12:59:01 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 12:59:01 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 12:59:01 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 12:59:05 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 12:59:05 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 12:59:05 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 12:59:05 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 12:59:05 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 13:03:14 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 13:03:14 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 13:03:14 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 13:03:14 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 13:03:14 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 13:03:16 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 13:03:16 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 13:03:16 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 13:03:16 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 13:03:16 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 13:05:58 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 13:05:58 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 13:05:58 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 13:05:58 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 13:05:58 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:11:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:11:51 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:11:51 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:11:51 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:11:51 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:21:19 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:21:19 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:21:19 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:21:19 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:21:19 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:21:28 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:21:28 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:21:28 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:21:28 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:21:28 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:21:35 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 14:21:36 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 14:21:36 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 14:21:36 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 14:22:33 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 14:22:33 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 14:22:33 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 14:22:33 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:36:36 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:36:36 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:36:50 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:36:50 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:36:50 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:36:50 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:36:50 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:37:43 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 14:37:44 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 14:37:44 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 14:37:44 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:39:38 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:39:38 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:39:38 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:39:38 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:39:38 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:44:49 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:44:49 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 14:44:49 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:44:50 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 14:44:50 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 14:44:50 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:44:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:44:51 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:44:51 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:44:51 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:44:51 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:45:11 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 14:45:11 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 14:45:11 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 14:45:11 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:47:50 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:47:50 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:47:50 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:47:50 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:47:50 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:47:53 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:47:53 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:47:53 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:47:53 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:47:53 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:48:35 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:48:35 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:48:35 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:48:35 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:48:35 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:48:52 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:48:52 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:48:52 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:48:52 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:48:52 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:48:54 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:48:54 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:48:54 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:48:54 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:48:54 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:50:51 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:50:51 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:50:52 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:50:52 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:50:52 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:50:52 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:50:52 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 14:51:39 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 14:51:40 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 14:51:40 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 14:51:40 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | FallVision Backend Logger Initialized
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | Log Level: INFO
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | Log Directory: D:\Users\akedarsetty\Desktop\FallVision\AIT_fallvision\logs
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | Console Output: True
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | JSON Format: False
+2026-03-25 14:53:52 | [32mINFO[0m | root                 | setup_logging   | ======================================================================
+2026-03-25 14:53:52 | [32mINFO[0m | app.main             | <module>        | Initializing FallVision API v1.0.0
+2026-03-25 14:53:52 | [32mINFO[0m | app.main             | <module>        | Configuring CORS for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-03-25 14:53:52 | [32mINFO[0m | app.main             | <module>        | Registering API routers
+2026-03-25 14:53:52 | [32mINFO[0m | app.main             | <module>        | All routers registered successfully
+2026-03-25 15:48:11 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 15:48:12 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 15:48:12 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 15:48:12 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001
+2026-03-25 15:48:51 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Request for resident: RES#res-20251112-0001
+2026-03-25 15:48:51 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Resident found: RES#res-20251112-0001, fetching sleep summaries...
+2026-03-25 15:48:51 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Found 10 sleep summaries for RES#res-20251112-0001
+2026-03-25 15:48:51 | [32mINFO[0m | app.routes.sleep     | get_sleep_diary_data | [SLEEP API] Successfully returning data for RES#res-20251112-0001

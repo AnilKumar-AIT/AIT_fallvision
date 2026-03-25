@@ -8,7 +8,7 @@ class Settings:
     AWS_REGION = "us-east-1"
     FACILITY_ID = "FAC#f-001"  # Primary facility ID
     
-    # DynamoDB Table Names
+        # DynamoDB Table Names
     TABLE_RESIDENTS = "residents"
     TABLE_EMERGENCY_CONTACTS = "resident_emergency_contacts"
     TABLE_SLEEP_SUMMARY = "sleep_nightly_summary"
@@ -20,6 +20,12 @@ class Settings:
     TABLE_UNIFIED_ALERTS = "unified_alerts"
     TABLE_SUGGESTIONS = "resident_smart_suggestions"
     TABLE_HEALTH_SCORE = "resident_health_score"
+    
+    # ADL (Activities of Daily Living) Tables
+    TABLE_ADL_ACTIVITY_EVENTS = "adl_activity_events"
+    TABLE_ADL_HOURLY_SUMMARY = "adl_hourly_summary"
+    TABLE_ADL_DAILY_SUMMARY = "adl_daily_summary"
+    TABLE_ADL_BASELINES = "adl_baselines"
     
     # S3 Buckets
     S3_PHOTOS_BUCKET = os.environ.get("S3_PHOTOS_BUCKET", "aitcare-dashboard-photos-dev")

@@ -4,6 +4,7 @@
  */
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
+console.log('[API SERVICE] Using API Base URL:', API_BASE_URL);
 const S3_BUCKET = 'aitcare-dashboard-photos-dev';
 const S3_REGION = 'us-east-1';
 
@@ -11,20 +12,60 @@ class ApiService {
   /**
    * Generic fetch wrapper with error handling
    */
-  async fetchData(endpoint) {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    async fetchData(endpoint) {
+      try {
+        const fullUrl = `${API_BASE_URL}${endpoint}`;
+        console.log('[API SERVICE] Fetching:', fullUrl);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Add timeout to detect hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+        try {
+          const response = await fetch(fullUrl, {
+            signal: controller.signal,
+            mode: 'cors',
+            headers: {
+              'Accept': 'application/json',
+            }
+          });
+          clearTimeout(timeoutId);
+        
+          console.log('[API SERVICE] Response received!');
+          console.log('[API SERVICE] Response status:', response.status);
+          console.log('[API SERVICE] Response headers:', Object.fromEntries(response.headers.entries()));
+        
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[API SERVICE] Error response:', errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        
+          const data = await response.json();
+          console.log('[API SERVICE] Data received successfully, keys:', Object.keys(data));
+          return data;
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+        
+          if (fetchError.name === 'AbortError') {
+            console.error('[API SERVICE] Request timed out after 10 seconds');
+            throw new Error('Request timed out - backend server may not be responding');
+          }
+          throw fetchError;
+        }
+      } catch (error) {
+        console.error(`[API SERVICE] Error fetching ${endpoint}:`, error);
+        console.error('[API SERVICE] Error type:', error.name);
+        console.error('[API SERVICE] Error message:', error.message);
+      
+        // Provide more helpful error messages
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          throw new Error('Cannot connect to backend server. Please ensure the server is running at http://localhost:8000');
+        }
+      
+        throw error;
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`API Error [${endpoint}]:`, error);
-      throw error;
     }
-  }
 
   /**
    * SLEEP DIARY API

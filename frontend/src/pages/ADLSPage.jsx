@@ -44,7 +44,7 @@ export default function ADLSPage({ residentId, showBackButton, onBackToResident 
   const [adlsData, setAdlsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { isMobile, isTablet } = useWindowSize();
+  const { isMobile } = useWindowSize();
 
   // Use passed residentId or default
   const activeResidentId = residentId || RESIDENT_ID;
@@ -120,8 +120,6 @@ export default function ADLSPage({ residentId, showBackButton, onBackToResident 
       </main>
     );
   }
-
-  const gap = isMobile ? 12 : 16;
 
   return (
     <main style={{
@@ -223,7 +221,7 @@ export default function ADLSPage({ residentId, showBackButton, onBackToResident 
                     {adlsData.residentName}
                   </p>
                   
-                  {/* Duration info */}
+                                    {/* Duration info */}
                   <div style={{
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.2)",
@@ -231,7 +229,7 @@ export default function ADLSPage({ residentId, showBackButton, onBackToResident 
                     padding: isMobile ? "8px 10px" : "8px 12px",
                   }}>
                     <p style={{ margin: "0 0 4px", fontSize: 10, color: W, opacity: 0.7 }}>
-                      Longest {activityName}ing Duration
+                      Today's Total {activityName}ing Duration
                     </p>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2">
@@ -239,10 +237,10 @@ export default function ADLSPage({ residentId, showBackButton, onBackToResident 
                         <polyline points="12 6 12 12 16 14"/>
                       </svg>
                       <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: W }}>
-                        {activityData.longestDuration.hours}Hrs
+                        {activityData.totalDuration.hours}Hrs
                       </span>
                       <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: W }}>
-                        {activityData.longestDuration.minutes}Mins
+                        {activityData.totalDuration.minutes}Mins
                       </span>
                     </div>
                   </div>

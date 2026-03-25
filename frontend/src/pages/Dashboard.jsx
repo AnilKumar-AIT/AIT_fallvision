@@ -13,22 +13,15 @@ import AddSeniorPage from "./AddSeniorPage";
 import AddCaregiverPage from "./AddCaregiverPage";
 import EditCaregiverModal from "../components/EditCaregiverModal";
 import EditResidentModal from "../components/EditResidentModal";
+import FallsPage from "./FallsPage";
 
-/*
- * ─── ADD NEW PAGES HERE ──────────────────────────────────────────────────
- *  1. Create  src/pages/FallsPage.jsx
- *  2. import FallsPage from "./FallsPage";
- *  3. Add to PAGE_MAP:  "Falls": <FallsPage />
- * ─────────────────────────────────────────────────────────────────────────
- */
 const PAGE_MAP = {
   "Sleep Diary": <SleepDiaryPage />,
   "Gait":        <GaitPage />,
   "ADLs":        <ADLSPage />,
   "Seniors":     <SeniorsPage />,
   "Caregivers":  <CaregiversPage />,
-  // "Home":        <HomePage />,
-  // "Falls":       <FallsPage />,
+  "Falls":       <FallsPage />,
 };
 
 /* ── Background per page ── */
@@ -38,6 +31,7 @@ const PAGE_BG = {
   "ADLs":        "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
   "Seniors":     "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
   "Caregivers":  "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
+  "Falls":       "linear-gradient(160deg, #b8d4f0 0%, #9ec4ea 30%, #7daed8 60%, #6a9ccc 100%)",
 };
 
 const ComingSoon = ({ name }) => (
