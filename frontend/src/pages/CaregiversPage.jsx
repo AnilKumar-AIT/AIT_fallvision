@@ -116,14 +116,28 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick, onAd
   const [filteredCaregivers, setFilteredCaregivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRole] = useState("All");
-  const [selectedShift] = useState("All");
-  const [selectedStatus] = useState("All");
+    const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState("All");
+  const [selectedShift, setSelectedShift] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
-  const { isMobile } = useWindowSize();
+    const { isMobile } = useWindowSize();
+
+  // Expose filters to parent (Sidebar)
+  useEffect(() => {
+    if (onFiltersChange) {
+      onFiltersChange({
+        selectedRole,
+        setSelectedRole,
+        selectedShift,
+        setSelectedShift,
+        selectedStatus,
+        setSelectedStatus,
+      });
+    }
+  }, [selectedRole, selectedShift, selectedStatus, onFiltersChange]);
 
   useEffect(() => {
     loadCaregivers();
@@ -134,7 +148,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick, onAd
       setLoading(true);
       setError(null);
       const data = await apiService.getAllCaregivers();
-      console.log('Caregivers API Response:', data);
+      
       
       if (!data || !data.caregivers || data.caregivers.length === 0) {
         console.warn('No caregivers data received from API');
@@ -162,7 +176,7 @@ export default function CaregiversPage({ onFiltersChange, onCaregiverClick, onAd
         };
       });
       
-      console.log('Transformed Caregivers:', transformedCaregivers);
+      
       setCaregivers(transformedCaregivers);
     } catch (err) {
       console.error('Failed to load caregivers:', err);

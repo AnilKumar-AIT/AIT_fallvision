@@ -321,7 +321,7 @@ export default function AddCaregiverPage({ onBack, onCaregiverAdded }) {
       };
 
       const result = await apiService.createCaregiver(caregiverData, photoFile);
-      console.log("Caregiver created:", result);
+      
       setSuccess(true);
 
       // Notify parent after short delay so user sees success

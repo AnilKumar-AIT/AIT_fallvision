@@ -57,7 +57,7 @@ async def create_caregiver(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in caregiver_data")
     except Exception as e:
-        print(f"[ERROR] Create caregiver failed: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -100,7 +100,7 @@ async def update_caregiver(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        print(f"[ERROR] Update caregiver failed: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

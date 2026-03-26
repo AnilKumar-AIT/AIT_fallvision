@@ -427,7 +427,7 @@ export default function AddSeniorPage({ onBack, onSeniorAdded }) {
       };
 
       const result = await apiService.createResident(residentData, photoFile);
-      console.log("Resident created:", result);
+      
       setSuccess(true);
 
       // Notify parent after short delay so user sees success

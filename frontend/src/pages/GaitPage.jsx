@@ -97,9 +97,9 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading gait data for resident:', activeResidentId);
+      
       const data = await apiService.getGaitData(activeResidentId);
-      console.log('Gait data loaded successfully:', data);
+      
       setGaitData(data);
     } catch (err) {
       console.error('Failed to load gait data:', err);
@@ -179,9 +179,9 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
   const strideData = gaitData.strideLengthDistribution || [];
   
   // Debug logs
-  console.log('Gait Data Loaded:', gaitData);
-  console.log('Stride Data:', strideData);
-  console.log('Stride Data Length:', strideData.length);
+  
+  
+  
 
   // Dynamic font size based on text length - FIXED FOR MODERATE
   const getFontSize = (text, isMobile, isTablet) => {

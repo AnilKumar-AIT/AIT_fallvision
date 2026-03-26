@@ -29,20 +29,19 @@ export default function CaregiverDetailsPage({ caregiverId, onBack, onNavigateTo
       setLoading(true);
       setError(null);
       
-      console.log('[CaregiverDetails] Loading data for:', caregiverId);
+      
       
       // Fetch caregiver details - THIS IS CRITICAL, if it fails, show error
       const caregiverData = await apiService.getCaregiverDetails(caregiverId);
-      console.log('[CaregiverDetails] Caregiver data loaded:', caregiverData);
+      
       setCaregiver(caregiverData);
       
       // Fetch certifications (non-critical)
       try {
         const certsData = await apiService.getCaregiverCertifications(caregiverId);
         setCertifications(certsData?.certifications || []);
-        console.log('[CaregiverDetails] Certifications loaded:', certsData?.certifications?.length || 0);
-      } catch (err) {
-        console.warn('[CaregiverDetails] Failed to load certifications:', err);
+        
+            } catch (err) {
         setCertifications([]);
       }
       
@@ -50,9 +49,8 @@ export default function CaregiverDetailsPage({ caregiverId, onBack, onNavigateTo
       try {
         const assignmentsData = await apiService.getCaregiverAssignments(caregiverId);
         setAssignments(assignmentsData?.assignments || []);
-        console.log('[CaregiverDetails] Assignments loaded:', assignmentsData?.assignments?.length || 0);
-      } catch (err) {
-        console.warn('[CaregiverDetails] Failed to load assignments:', err);
+        
+            } catch (err) {
         setAssignments([]);
       }
       
@@ -76,12 +74,10 @@ export default function CaregiverDetailsPage({ caregiverId, onBack, onNavigateTo
               name: displayName,
               room_id: (r.room_id || '').replace('ROOM#r-', '') || 'N/A'
             };
-          });
+                    });
           setResidents(residentsMap);
-          console.log('[CaregiverDetails] Residents map loaded:', Object.keys(residentsMap).length);
         }
-      } catch (err) {
-        console.warn('[CaregiverDetails] Failed to load residents:', err);
+            } catch (err) {
         setResidents({});
       }
       
@@ -89,9 +85,8 @@ export default function CaregiverDetailsPage({ caregiverId, onBack, onNavigateTo
       try {
         const scheduleData = await apiService.getCaregiverSchedule(caregiverId);
         setSchedule(scheduleData?.schedule || []);
-        console.log('[CaregiverDetails] Schedule loaded:', scheduleData?.schedule?.length || 0);
-      } catch (err) {
-        console.warn('[CaregiverDetails] Failed to load schedule:', err);
+        
+            } catch (err) {
         setSchedule([]);
       }
       
@@ -99,17 +94,15 @@ export default function CaregiverDetailsPage({ caregiverId, onBack, onNavigateTo
       try {
         const perfData = await apiService.getCaregiverPerformance(caregiverId);
         setPerformance(perfData || {});
-        console.log('[CaregiverDetails] Performance loaded:', perfData);
-      } catch (err) {
-        console.warn('[CaregiverDetails] Failed to load performance (this is OK):', err);
+        
+            } catch (err) {
         // Set empty performance object - this is not an error
         setPerformance({
           message: 'Performance data not available yet'
         });
       }
       
-    } catch (err) {
-      console.error('[CaregiverDetails] CRITICAL: Failed to load caregiver details:', err);
+        } catch (err) {
       setError(err);
     } finally {
       setLoading(false);

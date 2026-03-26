@@ -4,7 +4,6 @@
  */
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
-console.log('[API SERVICE] Using API Base URL:', API_BASE_URL);
 const S3_BUCKET = 'aitcare-dashboard-photos-dev';
 const S3_REGION = 'us-east-1';
 
@@ -12,10 +11,9 @@ class ApiService {
   /**
    * Generic fetch wrapper with error handling
    */
-    async fetchData(endpoint) {
+        async fetchData(endpoint) {
       try {
         const fullUrl = `${API_BASE_URL}${endpoint}`;
-        console.log('[API SERVICE] Fetching:', fullUrl);
       
         // Add timeout to detect hanging requests
         const controller = new AbortController();
@@ -31,32 +29,22 @@ class ApiService {
           });
           clearTimeout(timeoutId);
         
-          console.log('[API SERVICE] Response received!');
-          console.log('[API SERVICE] Response status:', response.status);
-          console.log('[API SERVICE] Response headers:', Object.fromEntries(response.headers.entries()));
-        
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('[API SERVICE] Error response:', errorText);
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
           }
         
           const data = await response.json();
-          console.log('[API SERVICE] Data received successfully, keys:', Object.keys(data));
           return data;
-        } catch (fetchError) {
+                } catch (fetchError) {
           clearTimeout(timeoutId);
         
           if (fetchError.name === 'AbortError') {
-            console.error('[API SERVICE] Request timed out after 10 seconds');
             throw new Error('Request timed out - backend server may not be responding');
           }
           throw fetchError;
         }
       } catch (error) {
-        console.error(`[API SERVICE] Error fetching ${endpoint}:`, error);
-        console.error('[API SERVICE] Error type:', error.name);
-        console.error('[API SERVICE] Error message:', error.message);
       
         // Provide more helpful error messages
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
@@ -283,6 +271,25 @@ class ApiService {
     }
 
     return highlights;
+  }
+
+      /**
+   * FALLS API
+   */
+  async getAllFalls(days = 30) {
+    return this.fetchData(`/falls?days=${days}`);
+  }
+
+  async getFallsByPriority(priorityLevel, days = 30) {
+    return this.fetchData(`/falls?priority=${priorityLevel}&days=${days}`);
+  }
+
+  async getFallAnalytics(days = 1) {
+    return this.fetchData(`/falls/analytics?days=${days}`);
+  }
+
+  async getFallVideo(fallId) {
+    return this.fetchData(`/falls/video/${encodeURIComponent(fallId)}`);
   }
 
   /**

@@ -156,7 +156,7 @@ export default function EditResidentModal({ resident, onClose, onUpdate, isMobil
       };
 
       const result = await apiService.updateResident(resident.resident_id, updatedData);
-      console.log("Resident updated:", result);
+      
 
       // Notify parent of successful update
       if (onUpdate) {

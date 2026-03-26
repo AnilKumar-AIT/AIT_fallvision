@@ -79,9 +79,7 @@ export default function SleepDiaryPage({ residentId, showBackButton, onBackToRes
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading sleep data for resident:', activeResidentId);
       const data = await apiService.getSleepData(activeResidentId);
-      console.log('Sleep data loaded successfully:', data);
       setSleepData(data);
     } catch (err) {
       console.error('Failed to load sleep data:', err);

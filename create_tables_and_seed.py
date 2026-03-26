@@ -1425,7 +1425,7 @@ def print_summary(table_defs):
         "5-Facility": "TIER 5: Facility-Level", "6-Assignment": "TIER 6: Assignments & Schedules",
         "7-Supporting": "TIER 7: Supporting"}
     total_gsi = 0
-        for tier_key, tier_label in tiers.items():
+    for tier_key, tier_label in tiers.items():
         tier_tables = [t for t in table_defs if any(tag["Value"] == tier_key for tag in t.get("Tags", []))]
         if tier_tables:
             print(f"  {tier_label}")
@@ -1529,7 +1529,7 @@ def main():
 
     print_s3_structure()
 
-        print(f"\n{'='*70}")
+    print(f"\n{'='*70}")
     print(f"  DONE! All 31 DynamoDB tables and 4 S3 buckets created and seeded.")
     print(f"  Cost: ~$205/mo for 100 Residents (~$189 core + ~$16 ADL)")
     print(f"  S3 Storage: ~$50/mo for video clips + photos")

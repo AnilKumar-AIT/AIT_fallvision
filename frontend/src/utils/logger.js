@@ -119,7 +119,7 @@ class Logger {
       console.info(logEntry.formattedMessage, data || '');
     } else {
       // In production, only log to console for important info
-      console.log(logEntry.formattedMessage);
+      
     }
     
     storeLog(logEntry);

@@ -148,8 +148,8 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick, onAddSen
       setLoading(true);
       setError(null);
       const data = await apiService.getAllResidents();
-      console.log('API Response:', data);
-      console.log('Raw Residents:', data.residents);
+      
+      
       
       // Check if we have any residents
       if (!data || !data.residents || data.residents.length === 0) {
@@ -160,7 +160,7 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick, onAddSen
       
       // Transform the data to extract needed fields from database
       const transformedResidents = data.residents.map((r, index) => {
-        console.log(`Processing resident ${index}:`, r);
+        
         
         // Extract name from status_name_sort field: "ACTIVE#LastName#FirstName#RES#..."
         let displayName = 'Unknown Resident';
@@ -188,7 +188,7 @@ export default function SeniorsPage({ onFiltersChange, onResidentClick, onAddSen
         };
       });
       
-      console.log('Transformed Residents:', transformedResidents);
+      
       setResidents(transformedResidents);
     } catch (err) {
       console.error('Failed to load residents - Full Error:', err);

@@ -64,7 +64,7 @@ async def get_adls_data(resident_id: str) -> Dict:
             )
             hourly_records = response.get('Items', [])
         except Exception as e:
-            print(f"Error querying adl_hourly_summary: {e}")
+
             hourly_records = []
         
         # ========================================
@@ -79,14 +79,14 @@ async def get_adls_data(resident_id: str) -> Dict:
             )
             daily_summary = response.get('Item', {})
         except Exception as e:
-            print(f"Error querying adl_daily_summary: {e}")
+
             daily_summary = {}
         
-        # ========================================
+                # ========================================
         # PROCESS DATA FOR FRONTEND
         # ========================================
         
-                # Create hourly chart data (24 hours)
+        # Create hourly chart data (24 hours)
         hourly_data_by_hour = {}
         for record in hourly_records:
             try:
@@ -98,10 +98,8 @@ async def get_adls_data(resident_id: str) -> Dict:
                     'walk': int(record.get('walk_minutes', 0))
                 }
             except (ValueError, IndexError) as e:
-                print(f"Error parsing hourly record: {e}")
                 continue
         
-        print(f"\nADL Hourly Data for {resident_id}:")
         print(f"  Total hourly records found: {len(hourly_records)}")
         if hourly_data_by_hour:
             print(f"  Hours with data: {sorted(hourly_data_by_hour.keys())}")
@@ -112,20 +110,20 @@ async def get_adls_data(resident_id: str) -> Dict:
                     data = hourly_data_by_hour[h]
                     print(f"  {format_hour_label(h)}: Sit={data['sit']}min, Walk={data['walk']}min, Stand={data['stand']}min")
         
-                # Generate ALL 24 hours of chart data
-                chart_hours = list(range(24))  # 0, 1, 2, 3, ... 23 (all 24 hours)
+        # Generate ALL 24 hours of chart data
+        chart_hours = list(range(24)) 
         
-                sit_chart_data = []
-                walk_chart_data = []
-                stand_chart_data = []
+        sit_chart_data = []
+        walk_chart_data = []
+        stand_chart_data = []
         
-                for hour in chart_hours:
-                    time_label = format_hour_label(hour)
-                    hourly = hourly_data_by_hour.get(hour, {'sit': 0, 'stand': 0, 'walk': 0})
+        for hour in chart_hours:
+            time_label = format_hour_label(hour)
+            hourly = hourly_data_by_hour.get(hour, {'sit': 0, 'stand': 0, 'walk': 0})
             
-                    sit_chart_data.append({"time": time_label, "duration": hourly['sit']})
-                    walk_chart_data.append({"time": time_label, "duration": hourly['walk']})
-                    stand_chart_data.append({"time": time_label, "duration": hourly['stand']})
+            sit_chart_data.append({"time": time_label, "duration": hourly['sit']})
+            walk_chart_data.append({"time": time_label, "duration": hourly['walk']})
+            stand_chart_data.append({"time": time_label, "duration": hourly['stand']})
         
         # ========================================
         # CALCULATE TOTAL DAILY DURATIONS
@@ -147,17 +145,18 @@ async def get_adls_data(resident_id: str) -> Dict:
             total_stand_minutes = sum(int(r.get('stand_minutes', 0)) for r in hourly_records)
         
         print(f"ADL Total Durations for {resident_id} (Today):")
-        print(f"  Sitting:  {total_sit_minutes} mins")
-        print(f"  Standing: {total_stand_minutes} mins")
-        print(f"  Walking:  {total_walk_minutes} mins")
+
+
+
         
+                
         # Convert to hours and minutes
         def minutes_to_hours_mins(total_minutes):
             hours = total_minutes // 60
             minutes = total_minutes % 60
             return {"hours": hours, "minutes": minutes}
         
-                # ========================================
+        # ========================================
         # BUILD RESPONSE
         # ========================================
         adls_data = {
@@ -182,7 +181,7 @@ async def get_adls_data(resident_id: str) -> Dict:
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error in get_adls_data: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

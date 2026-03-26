@@ -51,10 +51,10 @@ class S3Service:
                     "uploaded_at": datetime.now(timezone.utc).isoformat()
                 }
             )
-            print(f"[S3] Uploaded resident photo: {s3_key}")
+
             return s3_key
         except ClientError as e:
-            print(f"[S3 ERROR] Failed to upload photo: {e}")
+
             raise
 
     def upload_caregiver_photo(self, facility_id: str, caregiver_id: str, file_bytes: bytes, content_type: str = "image/jpeg") -> str:
@@ -94,10 +94,10 @@ class S3Service:
                     "uploaded_at": datetime.now(timezone.utc).isoformat()
                 }
             )
-            print(f"[S3] Uploaded caregiver photo: {s3_key}")
+
             return s3_key
         except ClientError as e:
-            print(f"[S3 ERROR] Failed to upload photo: {e}")
+
             raise
 
     def generate_presigned_url(self, s3_key: str, expiration: int = 3600) -> str:
@@ -113,7 +113,7 @@ class S3Service:
             )
             return url
         except ClientError as e:
-            print(f"[S3 ERROR] Failed to generate presigned URL: {e}")
+
             raise
 
     def delete_photo(self, s3_key: str):
@@ -123,9 +123,9 @@ class S3Service:
                 Bucket=self.bucket_name,
                 Key=s3_key
             )
-            print(f"[S3] Deleted photo: {s3_key}")
+
         except ClientError as e:
-            print(f"[S3 ERROR] Failed to delete photo: {e}")
+
             raise
 
     def _get_extension(self, content_type: str) -> str:

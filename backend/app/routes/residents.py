@@ -78,7 +78,7 @@ async def create_resident(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in resident_data")
     except Exception as e:
-        print(f"[ERROR] Create resident failed: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -107,7 +107,7 @@ async def update_resident(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        print(f"[ERROR] Update resident failed: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -183,7 +183,7 @@ async def get_resident_caregivers(resident_id: str, days: int = 7) -> Dict:
             "days": days
         }
     except Exception as e:
-        print(f"[ERROR] Failed to get resident caregivers: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -203,8 +203,7 @@ async def delete_resident(resident_id: str) -> Dict:
             try:
                 s3_service.delete_photo(photo_s3_key)
             except Exception as s3_err:
-                # Log but don't fail the request — DB record is already gone
-                print(f"[WARN] Could not delete S3 photo {photo_s3_key}: {s3_err}")
+                pass
 
         return {
             "message": "Resident deleted successfully",
@@ -212,7 +211,7 @@ async def delete_resident(resident_id: str) -> Dict:
             "photo_deleted": bool(photo_s3_key)
         }
     except Exception as e:
-        print(f"[ERROR] Delete resident failed: {e}")
+
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

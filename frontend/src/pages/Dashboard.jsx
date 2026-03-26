@@ -16,12 +16,12 @@ import EditResidentModal from "../components/EditResidentModal";
 import FallsPage from "./FallsPage";
 
 const PAGE_MAP = {
+  "Falls":<FallsPage/>,
   "Sleep Diary": <SleepDiaryPage />,
   "Gait":        <GaitPage />,
   "ADLs":        <ADLSPage />,
   "Seniors":     <SeniorsPage />,
   "Caregivers":  <CaregiversPage />,
-  "Falls":       <FallsPage />,
 };
 
 /* ── Background per page ── */
@@ -62,8 +62,9 @@ export default function Dashboard() {
   const [user, setUser]             = useState(null);
   const [authScreen, setAuthScreen] = useState("login"); // "login" | "forgot"
   const [activePage, setActivePage] = useState("Sleep Diary");
-  const [seniorsFilters, setSeniorsFilters] = useState(null);
+    const [seniorsFilters, setSeniorsFilters] = useState(null);
   const [caregiversFilters, setCaregiversFilters] = useState(null);
+  const [fallsFilters, setFallsFilters] = useState(null);
   const [selectedResident, setSelectedResident] = useState(null);
     const [selectedCaregiver, setSelectedCaregiver] = useState(null);
     const [residentPageContext, setResidentPageContext] = useState(null); // Tracks which resident's page to show
@@ -113,7 +114,7 @@ export default function Dashboard() {
         <AddCaregiverPage 
           onBack={() => setShowAddCaregiver(false)}
           onCaregiverAdded={(newCaregiver) => {
-            console.log('New caregiver added:', newCaregiver);
+            
             // Will go back to caregivers page which will reload
           }}
         />
@@ -147,7 +148,7 @@ export default function Dashboard() {
         <AddSeniorPage 
           onBack={() => setShowAddSenior(false)}
           onSeniorAdded={(newResident) => {
-            console.log('New resident added:', newResident);
+            
             // Will go back to seniors page which will reload
           }}
         />
@@ -276,6 +277,8 @@ export default function Dashboard() {
       onAddCaregiver={() => setShowAddCaregiver(true)}
       onEditCaregiver={(caregiver) => setEditingCaregiver(caregiver)}
     />;
+    } else if (activePage === "Falls") {
+    CurrentPage = <FallsPage onFiltersChange={setFallsFilters} />;
   } else if (PAGE_MAP[activePage]) {
     CurrentPage = PAGE_MAP[activePage];
   } else {
@@ -310,8 +313,9 @@ export default function Dashboard() {
           }
           setActivePage(page);
         }}
-        seniorsFilters={activePage === "Seniors" ? seniorsFilters : null}
+                seniorsFilters={activePage === "Seniors" ? seniorsFilters : null}
         caregiversFilters={activePage === "Caregivers" ? caregiversFilters : null}
+        fallsFilters={activePage === "Falls" ? fallsFilters : null}
         isNavigationLocked={isInResidentContext}
       />
       
@@ -323,7 +327,7 @@ export default function Dashboard() {
           caregiver={editingCaregiver}
           onClose={() => setEditingCaregiver(null)}
           onUpdate={(updatedCaregiver) => {
-            console.log('Caregiver updated:', updatedCaregiver);
+            
             setEditingCaregiver(null);
             // The CaregiversPage will reload on mount to show updated data
           }}
@@ -337,7 +341,7 @@ export default function Dashboard() {
           resident={editingResident}
           onClose={() => setEditingResident(null)}
           onUpdate={(updatedResident) => {
-            console.log('Resident updated:', updatedResident);
+            
             setEditingResident(null);
             // The SeniorsPage will reload on mount to show updated data
           }}

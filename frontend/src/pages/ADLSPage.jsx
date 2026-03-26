@@ -53,9 +53,9 @@ export default function ADLSPage({ residentId, showBackButton, onBackToResident 
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading ADLS data for resident:', activeResidentId);
+      
       const data = await apiService.getADLSData(activeResidentId);
-      console.log('ADLS data loaded successfully:', data);
+      
       setAdlsData(data);
     } catch (err) {
       console.error('Failed to load ADLS data:', err);

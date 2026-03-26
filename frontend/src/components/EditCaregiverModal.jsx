@@ -167,7 +167,7 @@ export default function EditCaregiverModal({ caregiver, onClose, onUpdate, isMob
       };
 
       const result = await apiService.updateCaregiver(caregiver.caregiver_id, updatedData);
-      console.log("Caregiver updated:", result);
+      
 
       // Notify parent of successful update
       if (onUpdate) {

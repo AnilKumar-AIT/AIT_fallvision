@@ -158,7 +158,7 @@ function SeniorsFilterButton({ label, value, options, onChange }) {
   );
 }
 
-export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregiversFilters, isNavigationLocked }) {
+export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregiversFilters, fallsFilters, isNavigationLocked }) {
   const { isMobile } = useWindowSize();
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = getTheme(activePage);
@@ -352,7 +352,7 @@ export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregi
             onChange={caregiversFilters.setSelectedStatus}
           />
         </div>
-                        ) : activePage === "ADLs" ? (
+                                                ) : activePage === "ADLs" ? (
         // Date display - ONLY for ADLs page
         <div style={{ ...pillStyle, gap: 8, padding: "0 20px", pointerEvents: "auto" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
@@ -364,6 +364,28 @@ export default function Sidebar({ activePage, onNavigate, seniorsFilters, caregi
           <span style={{ fontSize: 13, color: "#ffffff", fontWeight: 600, whiteSpace: "nowrap" }}>
             {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
+        </div>
+      ) : activePage === "Falls" && fallsFilters ? (
+        // Falls page filters - Age, Risk Level, Sleep Quality
+        <div style={{ ...pillStyle, gap: 10, padding: "0 16px", pointerEvents: "auto" }}>
+          <SeniorsFilterButton
+            label="Age"
+            value={fallsFilters.selectedAge}
+            options={["All", "60-70", "71-80", "81+"]}
+            onChange={fallsFilters.setSelectedAge}
+          />
+          <SeniorsFilterButton
+            label="Risk Level"
+            value={fallsFilters.selectedRiskLevel}
+            options={["All", "LOW", "MODERATE", "HIGH"]}
+            onChange={fallsFilters.setSelectedRiskLevel}
+          />
+          <SeniorsFilterButton
+            label="Sleep Quality"
+            value={fallsFilters.selectedSleepQuality}
+            options={["All", "GOOD", "AVERAGE", "POOR"]}
+            onChange={fallsFilters.setSelectedSleepQuality}
+          />
         </div>
       ) : (
         // Insights and Alerts - for all other pages
