@@ -1,118 +1,315 @@
-// eslint-disable-next-line no-unused-vars
+/**
+ * Gait Analysis Page Component
+ * 
+ * Displays comprehensive gait and mobility analytics for a resident including:
+ * - Key gait metrics (step frequency, stride length, balance score, fall risk)
+ * - Step frequency trends over time
+ * - Stride length distribution analysis
+ * - Arm swing symmetry tracking
+ * - Body tilt analysis with gauge visualization
+ * - Clinical insights and recommendations
+ * 
+ * @component
+ * @example
+ * // Used standalone
+ * <GaitPage />
+ * 
+ * // Used with resident details integration
+ * <GaitPage 
+ *   residentId="RES#res-20251112-0001"
+ *   showBackButton={true}
+ *   onBackToResident={handleBack}
+ * />
+ */
+
+// React core imports
 import { useState, useEffect } from "react";
+
+// Custom hooks and services
 import useWindowSize  from "../hooks/useWindowSize";
 import apiService     from "../services/api";
+
+// Reusable components
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage   from "../components/ErrorMessage";
+
+// Asset imports - icons for gait metrics
 import stepFreqIcon   from "../assets/step_frequency.svg";
 import strideLenIcon  from "../assets/stride_length.svg";
 import balanceIcon    from "../assets/balance_score.svg";
 import fallRiskIcon   from "../assets/fall_risk_level.svg";
 import armSwingIcon   from "../assets/arm_swing_symmetry.svg";
 import bodyTiltIcon   from "../assets/body_tilt_analysis.svg";
+
+// Recharts library - for data visualization
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, ComposedChart,
 } from "recharts";
 
-/* ═══════════════════════ CONSTANTS ═══════════════════════ */
-const RESIDENT_ID = "RES#res-20251112-0001"; // Default resident for demo
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CONSTANTS & CONFIGURATION
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ═══════════════════════ HELPERS ═══════════════════════ */
+/** Default resident ID used when no resident is specified (demo/development) */
+const RESIDENT_ID = "RES#res-20251112-0001";
+
+/** White color constant used throughout the component */
 const W = "#ffffff";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CUSTOM COMPONENTS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * GCard - Gradient Card Component
+ * 
+ * A styled card component with a dark blue gradient background and subtle
+ * lighting effect at the bottom. Used for all chart containers on the page.
+ * 
+ * Features:
+ * - Dark blue gradient background for depth
+ * - White border for definition
+ * - Bottom glow effect for visual interest
+ * - Configurable padding and additional styles
+ * 
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Content to render inside the card
+ * @param {Object} props.style - Additional CSS styles to apply
+ * @param {string} props.p - Padding value (default: "13px 15px")
+ * @returns {JSX.Element} Styled card container
+ */
 const GCard = ({ children, style = {}, p = "13px 15px" }) => (
   <div style={{
-    position:"relative", borderRadius:11,
+    position:"relative",
+    borderRadius:11,
     background:"linear-gradient(180deg, #0a1a30 0%, #0e2240 40%, #112a50 100%)",
     border:"1px solid #ffffff",
-    overflow:"hidden", padding:p, ...style,
+    overflow:"hidden",
+    padding:p,
+    ...style,
   }}>
+    {/* Bottom glow effect - creates depth and visual interest */}
     <div style={{
-      position:"absolute", bottom:0, left:0, right:0, height:"55%",
+      position:"absolute",
+      bottom:0,
+      left:0,
+      right:0,
+      height:"55%",
       background:"linear-gradient(to top, rgba(10,55,130,0.45) 0%, transparent 100%)",
-      pointerEvents:"none", zIndex:0,
+      pointerEvents:"none",
+      zIndex:0,
     }}/>
-    <div style={{ position:"relative", zIndex:1, height:"100%", display:"flex", flexDirection:"column" }}>
+    {/* Content container with higher z-index */}
+    <div style={{
+      position:"relative",
+      zIndex:1,
+      height:"100%",
+      display:"flex",
+      flexDirection:"column"
+    }}>
       {children}
     </div>
   </div>
 );
 
-/* ── Gauge for Body Tilt — blue shades ── */
+/**
+ * GaugeChart - Semi-circular gauge visualization for body tilt
+ * 
+ * Renders a half-circle gauge with four colored segments (blue gradient)
+ * and a needle indicator pointing to the current value. Used to visualize
+ * body tilt analysis with color-coded severity zones.
+ * 
+ * Color zones (left to right):
+ * - Dark blue (#1a6fb5): Normal tilt
+ * - Medium blue (#3ea8d5): Slight imbalance  
+ * - Light blue (#8ecae6): Moderate concern
+ * - Lightest blue (#c5e4f3): Significant tilt
+ * 
+ * @param {Object} props - Component props
+ * @param {number} props.value - Current value (0-100) determining needle position
+ * @param {number} props.size - Width of the gauge in pixels (default: 220)
+ * @returns {JSX.Element} SVG gauge chart
+ */
 const GaugeChart = ({ value = 50, size = 220 }) => {
-  const w = size, h = size * 0.6;
-  const cx = w / 2, cy = h - 6;
-  const r = w * 0.42;
-  const ri = r - (w * 0.1);
-  const startAngle = Math.PI;
-  const needleAngle = startAngle - ((value / 100) * Math.PI);
+  // Calculate gauge dimensions
+  const w = size;
+  const h = size * 0.6; // Height is 60% of width for semi-circle
+  
+  // Center point and radius calculations
+  const cx = w / 2;           // Center X coordinate
+  const cy = h - 6;           // Center Y coordinate (slightly above bottom)
+  const r = w * 0.42;         // Outer radius
+  const ri = r - (w * 0.1);   // Inner radius (creates donut effect)
+  
+  // Needle angle calculation
+  const startAngle = Math.PI;  // Start at left (180 degrees)
+  const needleAngle = startAngle - ((value / 100) * Math.PI); // Map value to angle
+  
+  // Needle tip coordinates
   const nx = cx + (r - 20) * Math.cos(needleAngle);
   const ny = cy - (r - 20) * Math.sin(needleAngle);
 
+  /**
+   * Helper function to create an arc segment
+   * 
+   * @param {number} s - Start angle in radians
+   * @param {number} e - End angle in radians
+   * @param {number} rin - Inner radius
+   * @param {number} ro - Outer radius
+   * @param {string} color - Fill color for the arc
+   * @returns {JSX.Element} SVG path element
+   */
   const arc = (s, e, rin, ro, color) => {
+    // Calculate outer arc endpoints
     const x1o = cx + ro * Math.cos(s), y1o = cy - ro * Math.sin(s);
     const x2o = cx + ro * Math.cos(e), y2o = cy - ro * Math.sin(e);
+    
+    // Calculate inner arc endpoints
     const x2i = cx + rin * Math.cos(e), y2i = cy - rin * Math.sin(e);
     const x1i = cx + rin * Math.cos(s), y1i = cy - rin * Math.sin(s);
+    
+    // Determine if arc is large (> 180 degrees)
     const large = (s - e) > Math.PI ? 1 : 0;
+    
+    // Create donut segment path
     return <path d={`M${x1o},${y1o} A${ro},${ro} 0 ${large} 1 ${x2o},${y2o} L${x2i},${y2i} A${rin},${rin} 0 ${large} 0 ${x1i},${y1i} Z`} fill={color}/>;
   };
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      {arc(Math.PI, Math.PI * 0.75, ri, r, "#1a6fb5")}
-      {arc(Math.PI * 0.75, Math.PI * 0.5, ri, r, "#3ea8d5")}
-      {arc(Math.PI * 0.5, Math.PI * 0.25, ri, r, "#8ecae6")}
-      {arc(Math.PI * 0.25, 0, ri, r, "#c5e4f3")}
+      {/* Four colored arc segments creating the gauge background */}
+      {arc(Math.PI, Math.PI * 0.75, ri, r, "#1a6fb5")}        {/* Normal tilt */}
+      {arc(Math.PI * 0.75, Math.PI * 0.5, ri, r, "#3ea8d5")}  {/* Slight imbalance */}
+      {arc(Math.PI * 0.5, Math.PI * 0.25, ri, r, "#8ecae6")}  {/* Moderate */}
+      {arc(Math.PI * 0.25, 0, ri, r, "#c5e4f3")}             {/* Significant tilt */}
+      
+      {/* Needle indicator */}
       <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={W} strokeWidth="3" strokeLinecap="round" />
+      
+      {/* Center pivot point */}
       <circle cx={cx} cy={cy} r="5" fill={W} />
     </svg>
   );
 };
 
-/* Lollipop: white if above 3000, blue if at/below 3000 */
+/**
+ * StepLollipop - Custom bar chart component for step frequency visualization
+ * 
+ * Renders a vertical line (stick) with a circle on top (lollipop head) to represent
+ * daily step counts. Color changes based on whether the step count meets the
+ * recommended threshold of 3000 steps.
+ * 
+ * Color coding:
+ * - White (#ffffff): Above 3000 steps (goal met)
+ * - Blue (#5b9bd5): At or below 3000 steps (below goal)
+ * 
+ * @param {Object} props - Component props from Recharts
+ * @param {number} props.x - X coordinate of the bar
+ * @param {number} props.y - Y coordinate of the bar
+ * @param {number} props.width - Width of the bar area
+ * @param {number} props.height - Height of the bar
+ * @param {Object} props.payload - Data payload containing step count
+ * @returns {JSX.Element} SVG group containing line and circle
+ */
 const StepLollipop = ({ x, y, width, height, payload }) => {
+  // Calculate center x-position for the lollipop
   const cx = x + width / 2;
+  
+  // Determine color based on step count threshold (3000 steps)
   const color = payload && payload.steps > 3000 ? "#ffffff" : "#5b9bd5";
+  
   return (
     <g>
+      {/* Vertical line (stick) from bottom to near top */}
       <line x1={cx} y1={y + height} x2={cx} y2={y + 5} stroke={color} strokeWidth={1.5}/>
+      {/* Circle at top (lollipop head) */}
       <circle cx={cx} cy={y + 3} r={3.5} fill={color}/>
     </g>
   );
 };
 
-/* ═══════════════════════ PAGE ═══════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MAIN COMPONENT
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * GaitPage - Main component for gait analysis dashboard
+ * 
+ * Displays comprehensive gait and mobility metrics including step frequency,
+ * stride length, balance scores, arm swing symmetry, and body tilt analysis.
+ * Provides clinical insights and fall risk assessment.
+ * 
+ * @param {Object} props - Component props
+ * @param {string} [props.residentId] - Resident ID to fetch gait data for
+ * @param {boolean} [props.showBackButton] - Whether to show back button
+ * @param {Function} [props.onBackToResident] - Callback when back button clicked
+ * @returns {JSX.Element} Complete gait analysis dashboard
+ */
 export default function GaitPage({ residentId, showBackButton, onBackToResident }) {
+  /* ───────────────────────────────────────────────────────────────────────────
+   * STATE MANAGEMENT
+   * ─────────────────────────────────────────────────────────────────────────── */
+  
+  /** Gait data from API */
   const [gaitData, setGaitData] = useState(null);
+  
+  /** Loading state for API calls */
   const [loading, setLoading] = useState(true);
+  
+  /** Error state for failed API calls */
   const [error, setError] = useState(null);
+  
+  /** Responsive layout breakpoints */
   const { isMobile, isTablet, isDesktop } = useWindowSize();
 
-  // Use passed residentId or default
+  /** Use passed residentId or fall back to default */
   const activeResidentId = residentId || RESIDENT_ID;
 
+    /* ───────────────────────────────────────────────────────────────────────────
+   * DATA FETCHING
+   * ─────────────────────────────────────────────────────────────────────────── */
+  
+  /**
+   * Load gait data from API
+   * 
+   * Fetches comprehensive gait analytics for the active resident including
+   * metrics, step frequency trends, stride distribution, arm swing data,
+   * and body tilt measurements.
+   */
   const loadGaitData = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Fetch gait data from API service
       const data = await apiService.getGaitData(activeResidentId);
       
       setGaitData(data);
+      
     } catch (err) {
+      // Log error details for debugging
       console.error('Failed to load gait data:', err);
       console.error('Resident ID that failed:', activeResidentId);
       setError(err);
+      
     } finally {
+      // Always stop loading spinner
       setLoading(false);
     }
   };
 
+  /**
+   * Effect: Load gait data when resident changes
+   * Refetches data whenever the activeResidentId changes
+   */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGaitData(); }, [activeResidentId]);
 
+  /* ───────────────────────────────────────────────────────────────────────────
+   * LOADING STATE
+   * ─────────────────────────────────────────────────────────────────────────── */
+  
   if (loading) {
     return (
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
@@ -139,6 +336,10 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
     );
   }
 
+  /* ───────────────────────────────────────────────────────────────────────────
+   * ERROR STATE
+   * ─────────────────────────────────────────────────────────────────────────── */
+  
   if (error || !gaitData) {
     return (
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, minHeight: "100vh" }}>
@@ -165,39 +366,67 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
     );
   }
 
-  // Transform data for rendering
+    /* ───────────────────────────────────────────────────────────────────────────
+   * DATA TRANSFORMATION
+   * Transform API data into formats required by charts
+   * ─────────────────────────────────────────────────────────────────────────── */
+  
+  /**
+   * Step frequency data for lollipop chart
+   * Maps daily step counts with threshold indicator
+   */
   const stepFreqData = gaitData.stepFrequencyOverTime.map((d) => ({
     day:   d.day,
     steps: d.steps,
-    above: d.steps >= 3000,
+    above: d.steps >= 3000, // Flag for meeting daily step goal
   }));
 
+  /**
+   * Arm swing symmetry data for line chart
+   * Tracks left and right arm acceleration over time
+   */
   const armSwingData = gaitData.armSwingSymmetry.map(d => ({
-    time: d.time, left: d.left, right: d.right,
+    time: d.time,
+    left: d.left,
+    right: d.right,
   }));
 
+  /**
+   * Stride length distribution data for stacked bar chart
+   * Shows breakdown of ideal, moderate, and suboptimal stride lengths
+   */
   const strideData = gaitData.strideLengthDistribution || [];
-  
-  // Debug logs
-  
-  
-  
 
-  // Dynamic font size based on text length - FIXED FOR MODERATE
+  /**
+   * Dynamic font size calculator for metric values
+   * 
+   * Adjusts font size based on text length to ensure values fit in fixed-size boxes.
+   * Handles different risk level labels (HIGH, MEDIUM, MODERATE) gracefully.
+   * 
+   * @param {string|number} text - The text to display
+   * @param {boolean} isMobile - Mobile breakpoint flag
+   * @param {boolean} isTablet - Tablet breakpoint flag
+   * @returns {number} Font size in pixels
+   */
   const getFontSize = (text, isMobile, isTablet) => {
     const len = String(text).length;
+    
     if (len <= 4) {
-      // "HIGH" - full size
+      // Short text like "HIGH" - full size
       return isMobile ? 28 : isTablet ? 40 : 52;
     }
     if (len <= 6) {
-      // "MEDIUM" - 65%
+      // Medium text like "MEDIUM" - 65% size
       return isMobile ? 18 : isTablet ? 26 : 34;
     }
-    // "MODERATE" (8 chars) - 40% to fit in fixed box
+    // Long text like "MODERATE" (8 chars) - 40% size to fit in box
     return isMobile ? 12 : isTablet ? 16 : 21;
   };
 
+  /**
+   * Metric cards data for the left column
+   * Contains key gait metrics with values, units, change percentages, and icons
+   */
   const metricCards = [
     { label:"Step Frequency",  val:String(gaitData.metrics.stepFrequency.value),  unit:gaitData.metrics.stepFrequency.unit,  pct:`${gaitData.metrics.stepFrequency.change}%`,  icon:stepFreqIcon  },
     { label:"Stride Length",   val:String(gaitData.metrics.strideLength.value),   unit:gaitData.metrics.strideLength.unit,   pct:`${gaitData.metrics.strideLength.change}%`,   icon:strideLenIcon },
@@ -205,14 +434,38 @@ export default function GaitPage({ residentId, showBackButton, onBackToResident 
     { label:"Fall Risk Level", val:gaitData.metrics.fallRiskLevel.value,          unit:"",                                   pct:"",                                            icon:fallRiskIcon, isRisk:true },
   ];
 
-  const gap      = isMobile ? 8 : 10;
+  /* ───────────────────────────────────────────────────────────────────────────
+   * RESPONSIVE LAYOUT CALCULATIONS
+   * Compute sizes and spacing based on screen size
+   * ─────────────────────────────────────────────────────────────────────────── */
+  
+  /** Gap between grid items */
+  const gap = isMobile ? 8 : 10;
+  
+  /** Use three-column layout on desktop */
   const threeCol = isDesktop;
+  
+  /** Card header font size */
   const headerFont = isMobile ? 14 : isTablet ? 16 : 18;
+  
+  /** Legend text font size */
   const legendFont = isMobile ? 9 : isTablet ? 10 : 12;
+  
+  /** Metric unit label font size */
   const metricUnit = isMobile ? 10 : isTablet ? 13 : 16;
+  
+  /** Icon circle diameter */
   const iconCircle = isMobile ? 44 : isTablet ? 56 : 70;
-  const iconImg    = isMobile ? 24 : isTablet ? 32 : 38;
-  const gaugeSize  = isMobile ? 160 : isTablet ? 200 : 260;
+  
+  /** Icon image size */
+  const iconImg = isMobile ? 24 : isTablet ? 32 : 38;
+  
+  /** Gauge chart size */
+  const gaugeSize = isMobile ? 160 : isTablet ? 200 : 260;
+
+  /* ───────────────────────────────────────────────────────────────────────────
+   * RENDER
+   * ─────────────────────────────────────────────────────────────────────────── */
 
   return (
     <main style={{

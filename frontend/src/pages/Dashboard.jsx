@@ -257,28 +257,33 @@ export default function Dashboard() {
       showBackButton={isInResidentContext}
       onBackToResident={handleBackToResidentDetails}
     />;
-  } else if (activePage === "ADLs") {
+    } else if (activePage === "ADLs") {
     CurrentPage = <ADLSPage 
       residentId={residentPageContext}
       showBackButton={isInResidentContext}
       onBackToResident={handleBackToResidentDetails}
     />;
-                        } else if (activePage === "Seniors") {
+  } else if (activePage === "Falls") {
+    CurrentPage = <FallsPage 
+      onFiltersChange={setFallsFilters}
+      residentId={residentPageContext}
+      showBackButton={isInResidentContext}
+      onBackToResident={handleBackToResidentDetails}
+    />;
+  } else if (activePage === "Seniors") {
                 CurrentPage = <SeniorsPage 
       onFiltersChange={setSeniorsFilters} 
       onResidentClick={(residentId) => setSelectedResident(residentId)}
       onAddSenior={() => setShowAddSenior(true)}
       onEditResident={(resident) => setEditingResident(resident)}
     />;
-        } else if (activePage === "Caregivers") {
+            } else if (activePage === "Caregivers") {
     CurrentPage = <CaregiversPage 
       onFiltersChange={setCaregiversFilters} 
       onCaregiverClick={(caregiverId) => setSelectedCaregiver(caregiverId)}
       onAddCaregiver={() => setShowAddCaregiver(true)}
       onEditCaregiver={(caregiver) => setEditingCaregiver(caregiver)}
     />;
-    } else if (activePage === "Falls") {
-    CurrentPage = <FallsPage onFiltersChange={setFallsFilters} />;
   } else if (PAGE_MAP[activePage]) {
     CurrentPage = PAGE_MAP[activePage];
   } else {

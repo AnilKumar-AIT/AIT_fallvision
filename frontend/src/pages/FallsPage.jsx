@@ -21,7 +21,7 @@ const W = "#ffffff";
 const DEFAULT_RESIDENT_ID = "RES#res-20251112-0001"; // Same as Sleep Diary and Gait pages
 
 /* ═══════════════════════ PAGE ═══════════════════════ */
-export default function FallsPage({ onFiltersChange }) {
+export default function FallsPage({ onFiltersChange, residentId, showBackButton, onBackToResident }) {
   const [fallRecords, setFallRecords] = useState([]);
   const [fallAnalyticsData, setFallAnalyticsData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,41 +59,44 @@ export default function FallsPage({ onFiltersChange }) {
     }
   }, [selectedAge, selectedRiskLevel, selectedSleepQuality, onFiltersChange]);
 
-        const loadFallData = async () => {
+                const loadFallData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Load falls for the default resident only
+        // Use provided residentId or fall back to default
+        const targetResidentId = residentId || DEFAULT_RESIDENT_ID;
+        
+        // Load falls for the specified resident
         const [fallsData, analyticsData] = await Promise.all([
           apiService.getAllFalls(90), // Get last 90 days
           apiService.getFallAnalytics(1)
         ]);
       
-                const defaultResidentFalls = (fallsData.falls || []).filter(
-                  fall => fall.resident_id === DEFAULT_RESIDENT_ID
-                );
+        const residentFalls = (fallsData.falls || []).filter(
+          fall => fall.resident_id === targetResidentId
+        );
 
-        // Debug: Log photo_s3_key values
-        console.log('[FallsPage] Loaded falls:', defaultResidentFalls.length);
-        defaultResidentFalls.forEach((fall, idx) => {
+                // Debug: Log photo_s3_key values
+        console.log('[FallsPage] Loaded falls:', residentFalls.length);
+        residentFalls.forEach((fall, idx) => {
           console.log(`[FallsPage] Fall ${idx}: resident_name='${fall.resident_name}', photo_s3_key='${fall.photo_s3_key}'`);
         });
       
-        setFallRecords(defaultResidentFalls);
-        setFallAnalyticsData(analyticsData.analytics || []);
+        setFallRecords(residentFalls);
+                setFallAnalyticsData(analyticsData.analytics || []);
       } catch (err) {
         console.error('Failed to load fall data:', err);
-        console.error('Resident ID that failed:', DEFAULT_RESIDENT_ID);
+        console.error('Resident ID that failed:', residentId || DEFAULT_RESIDENT_ID);
         setError(err);
       } finally {
         setLoading(false);
       }
     };
 
-    // Load fall data on mount
+        // Load fall data on mount or when residentId changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { loadFallData(); }, []);
+    useEffect(() => { loadFallData(); }, [residentId]);
 
         // Handle fall record click - show specific fall incident details
   const handleFallRecordClick = async (fall) => {
@@ -213,7 +216,7 @@ export default function FallsPage({ onFiltersChange }) {
 
   return (
     <>
-      <main
+            <main
         style={{
           flex: 1,
           padding: isMobile ? "10px 10px" : "12px 60px",
@@ -226,13 +229,52 @@ export default function FallsPage({ onFiltersChange }) {
           color: W,
           position: "relative",
           zIndex: 1,
-          paddingTop: isMobile ? 100 : 110,
+          paddingTop: isMobile ? 100 : (showBackButton ? 150 : 110),
           paddingBottom: isMobile ? 10 : 12,
           height: "100vh",
           boxSizing: "border-box",
         }}
       >
-                {/* Search Bar with Fall Report and View All */}
+                {/* Back to Resident Details Button */}
+        {showBackButton && onBackToResident && (
+          <button
+            onClick={onBackToResident}
+            style={{
+              position: "fixed",
+              top: 80,
+              left: 20,
+              zIndex: 1001,
+              background: "rgba(4,37,88,0.95)",
+              border: "2px solid #FFFFFF",
+              borderRadius: 12,
+              padding: "12px 20px",
+              color: W,
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              transition: "all 0.2s",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(4,37,88,1)";
+              e.currentTarget.style.transform = "translateX(-4px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(4,37,88,0.95)";
+              e.currentTarget.style.transform = "translateX(0)";
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2.5" strokeLinecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Resident Details
+          </button>
+        )}
+
+        {/* Search Bar with Fall Report and View All */}
         <div
           style={{
             display: "flex",

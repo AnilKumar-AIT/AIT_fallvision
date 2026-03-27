@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useWindowSize from "../hooks/useWindowSize";
 import apiService from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -18,11 +18,7 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadResidentDetails();
-  }, [residentId]);
-
-  const loadResidentDetails = async () => {
+  const loadResidentDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,9 +58,13 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
       console.error('Failed to load resident details:', err);
       setError(err);
     } finally {
-      setLoading(false);
+            setLoading(false);
     }
-  };
+  }, [residentId]);
+
+  useEffect(() => {
+    loadResidentDetails();
+  }, [loadResidentDetails]);
 
   if (loading) {
     return (
@@ -361,12 +361,12 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
             icon="sleep"
             onClick={() => onNavigateToScreen && onNavigateToScreen('Sleep Diary', residentId)}
           />
-          <HighlightCard 
+                    <HighlightCard 
             title="Recent Falls"
             value={highlights?.recent_falls_count != null ? String(highlights.recent_falls_count) : "N/A"}
             subtitle="Last 30 days"
             icon="fall"
-            onClick={null}
+            onClick={() => onNavigateToScreen && onNavigateToScreen('Falls', residentId)}
           />
           <HighlightCard 
             title="Gait Score"
@@ -375,12 +375,12 @@ export default function ResidentDetailsPage({ residentId, onBack, onNavigateToSc
             icon="gait"
             onClick={() => onNavigateToScreen && onNavigateToScreen('Gait', residentId)}
           />
-          <HighlightCard 
+                    <HighlightCard 
             title="ADL Completion"
             value={highlights?.adl_completion ? `${highlights.adl_completion}%` : "N/A"}
             subtitle="Daily activities"
             icon="adl"
-            onClick={null}
+            onClick={() => onNavigateToScreen && onNavigateToScreen('ADLs', residentId)}
           />
         </div>
       </div>
@@ -612,107 +612,6 @@ function HighlightCard({ title, value, subtitle, icon, onClick }) {
           </svg>
         </div>
       )}
-    </button>
-  );
-}
-
-/* ═══════════════════════ QUICK ACCESS MODULE ═══════════════════════ */
-function QuickAccessModule({ title, description, icon, onClick, bgColor, isMobile }) {
-  const getIcon = () => {
-    switch(icon) {
-      case "gate":
-        return <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></>;
-      case "sleep":
-        return <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>;
-      case "fall":
-        return <><path d="M12 9v6m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></>;
-      case "adl":
-        return <><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></>;
-      default:
-        return <circle cx="12" cy="12" r="10"/>;
-    }
-  };
-
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: bgColor || "#042558",
-        border: "2px solid #FFFFFF",
-        borderRadius: 16,
-        padding: isMobile ? "20px" : "24px",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        gap: 12,
-        textAlign: "left",
-        transition: "all 0.3s ease",
-        position: "relative",
-        overflow: "hidden",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.3)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      {/* Icon */}
-      <div style={{
-        width: 56,
-        height: 56,
-        borderRadius: 14,
-        background: "#042558",
-        border: "2px solid #FFFFFF",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2">
-          {getIcon()}
-        </svg>
-      </div>
-      
-      {/* Title */}
-      <h3 style={{
-        margin: "4px 0 0 0",
-        fontSize: isMobile ? 18 : 20,
-        fontWeight: 700,
-        color: W,
-      }}>
-        {title}
-      </h3>
-      
-      {/* Description */}
-      <p style={{
-        margin: 0,
-        fontSize: 14,
-        color: "rgba(255,255,255,0.8)",
-        lineHeight: "1.5",
-      }}>
-        {description}
-      </p>
-      
-      {/* Arrow Icon */}
-      <div style={{
-        position: "absolute",
-        bottom: 20,
-        right: 20,
-        width: 36,
-        height: 36,
-        borderRadius: "50%",
-        background: "#FFFFFF",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#042558" strokeWidth="3" strokeLinecap="round">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </div>
     </button>
   );
 }

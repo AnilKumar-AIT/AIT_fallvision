@@ -27,8 +27,12 @@ class Settings:
     TABLE_ADL_DAILY_SUMMARY = "adl_daily_summary"
     TABLE_ADL_BASELINES = "adl_baselines"
     
-    # S3 Buckets
+        # S3 Buckets
     S3_PHOTOS_BUCKET = os.environ.get("S3_PHOTOS_BUCKET", "aitcare-dashboard-photos-dev")
+    S3_FALL_CLIPS_BUCKET = os.environ.get("S3_FALL_CLIPS_BUCKET", "aitcare-fall-clips-encrypted-dev")
+    
+    # Pre-signed URL Settings
+    PRESIGNED_URL_EXPIRY_SEC = int(os.environ.get("PRESIGNED_URL_EXPIRY_SEC", "3600"))  # 1 hour default
     
     # CORS
     CORS_ORIGINS = [
